@@ -112,6 +112,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 <button class="nav" onclick="go('program',this)">برنامج الجولة</button>
 <button class="nav" onclick="go('spec',this)">التخصصات</button>
 <button class="nav" onclick="go('mapsec',this)">الخريطة</button>
+<button class="nav" onclick="go('stats',this)">الإحصائيات</button>
 <button class="nav" onclick="go('reports',this)">التقارير</button>
 <button class="nav" onclick="go('users',this)">المستخدمون والصلاحيات</button>
 <button class="nav" onclick="go('settings',this)">الإعدادات</button>
@@ -151,6 +152,25 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 <section id="spec" style="margin-top:18px"><div class="panel"><div class="section-title"><h2>التخصصات</h2><span class="muted">التخصصات المستخدمة في توزيع الطاقم.</span></div><div id="specGrid" class="user-grid"></div></div></section>
 
 <section id="mapsec" style="margin-top:18px"><div class="panel"><h2>الخريطة</h2><p class="muted">خريطة الأردن التفاعلية. اضغط على النقطة لعرض الجولات التابعة للموقع.</p><div class="map" id="map2"></div></div></section>
+
+<section id="stats" style="margin-top:18px">
+<div class="section-title"><div><h2>الإحصائيات والتحليل</h2><div class="muted">تحليل شامل للجولات المنفذة حتى تاريخ اليوم، مع التوزيع حسب النوع والشهر والموقع والمدينة.</div></div><button class="action" onclick="printStats()">🖨️ طباعة / حفظ PDF</button></div>
+<div class="cards" style="grid-template-columns:repeat(5,1fr)">
+<div class="card green"><div class="label">إجمالي المنفذ</div><div class="num" id="sDone">0</div><span class="muted">جولة</span></div>
+<div class="card blue"><div class="label">معلن منفذ</div><div class="num" id="sAnn">0</div></div>
+<div class="card orange"><div class="label">مفاجئ / متابعة منفذ</div><div class="num" id="sSur">0</div></div>
+<div class="card purple"><div class="label">متخصص منفذ</div><div class="num" id="sSpec">0</div></div>
+<div class="card"><div class="label">المواقع المنفذة</div><div class="num" id="sSites">0</div></div>
+</div>
+<div class="grid2">
+<div class="panel"><h3>الجولات المنفذة حسب النوع</h3><div id="statsType" class="chartbox"></div></div>
+<div class="panel"><h3>الجولات المنفذة حسب الشهر</h3><div id="statsMonth" class="chartbox"></div></div>
+</div>
+<div class="grid2">
+<div class="panel"><h3>الجولات المنفذة حسب الموقع</h3><div class="chartbox"><div class="hbars" id="statsSiteBars"></div></div></div>
+<div class="panel"><h3>الجولات المنفذة حسب المدينة / المحافظة</h3><div class="chartbox"><div class="hbars" id="statsCityBars"></div></div></div>
+</div>
+</section>
 
 <section id="reports" style="margin-top:18px"><div class="section-title"><div><h2>إحصائيات الجولات المنفذة</h2><div class="muted">الإحصائيات محسوبة للجولات التي تاريخها اليوم أو قبله.</div></div><button class="action" onclick="printReport()">🖨️ طباعة / حفظ PDF</button></div>
 <div class="cards" style="grid-template-columns:repeat(5,1fr)">
@@ -256,7 +276,7 @@ function statusOf(d){return d<today()?"منتهية":d===today()?"اليوم":"�
 function go(id,btn){document.querySelectorAll("main section").forEach(s=>s.style.display=s.id===id?"block":"none");document.querySelectorAll(".nav").forEach(n=>n.classList.remove("active"));if(btn)btn.classList.add("active");if(id==="mapsec")setTimeout(()=>map2&&map2.invalidateSize(),100)}
 let editRoundId=-1;
 function init(){document.querySelectorAll("main section").forEach((s,i)=>s.style.display=i===0?"block":"none");renderAll();initMaps();if(restoreSession()){applyPermissions()}else{document.getElementById("loginScreen").classList.remove("hidden");setTimeout(()=>document.getElementById("loginUser").focus(),50)}}
-function renderAll(){renderHome();renderRounds();renderCrew();renderSpecs();renderUsers();renderReports()}
+function renderAll(){renderHome();renderRounds();renderCrew();renderSpecs();renderUsers();renderStats();renderReports()}
 function renderHome(){
 let rs=state.rounds, d=rs.filter(x=>x.date<=today()).length, done=rs.filter(x=>x.date<today()||x.completed).length;
 document.getElementById("total").textContent=rs.length;document.getElementById("done").textContent=done;document.getElementById("notdone").textContent=Math.max(0,rs.length-done);document.getElementById("rate").textContent=(d?Math.round(done/d*100):0)+"%";
@@ -271,6 +291,8 @@ function renderRounds(){let q=(document.getElementById("q")?.value||"").trim(),t
 function renderCrew(){let q=(document.getElementById("crewSearch")?.value||"").toLowerCase(),f=document.getElementById("crewSpecFilter")?.value||"";document.getElementById("crewSpecFilter").innerHTML="<option value=''>كل التخصصات</option>"+SPECS.map(s=>`<option ${s===f?"selected":""}>${esc(s)}</option>`).join("");document.getElementById("crewRows").innerHTML=state.crew.filter(c=>(!q||(c.name+c.rank+c.spec).toLowerCase().includes(q))&&(!f||c.spec===f)).map((c,i)=>`<tr><td>${esc(c.name)}</td><td>${esc(c.rank)}</td><td>${esc(c.spec)}</td><td>${esc(c.role)}</td><td>${esc(c.phone||"")}</td><td><button class="action secondary" onclick="openCrew(${i})">تعديل</button></td></tr>`).join("")||"<tr><td colspan='6'>لا توجد بيانات</td></tr>"}
 function renderSpecs(){document.getElementById("specGrid").innerHTML=SPECS.map(s=>`<div class="user-card"><b>${esc(s)}</b><div class="muted">${state.crew.filter(c=>c.spec===s).length} عضو</div></div>`).join("")}
 function renderUsers(){document.getElementById("userCards").innerHTML=state.users.map((u,i)=>`<div class="user-card"><b>${esc(u.u)}</b><div>${esc(u.full)}</div><div class="muted">${esc(u.role)} — ${esc(u.job||"")}</div><div style="margin-top:8px;font-size:12px">الجولات: ${u.p.add?"✓":"—"} | عدة مواقع: ${u.p.multi?"✓":"—"} | الطاقم: ${u.p.crew?"✓":"—"} | المستخدمون: ${u.p.users?"✓":"—"}</div><div style="margin-top:8px"><button class="action secondary" onclick="openUser(${i})">تعديل</button></div></div>`).join("")}
+function renderStats(){let rs=state.rounds.filter(x=>x.date<=today()),sites=new Set(rs.flatMap(x=>x.sites||[]));document.getElementById("sDone").textContent=rs.length;document.getElementById("sAnn").textContent=rs.filter(x=>x.type==="معلن").length;document.getElementById("sSur").textContent=rs.filter(x=>x.type==="مفاجئ / متابعة").length;document.getElementById("sSpec").textContent=rs.filter(x=>x.type==="متخصص").length;document.getElementById("sSites").textContent=sites.size;let types=["معلن","مفاجئ / متابعة","متخصص"],tc=types.map(t=>rs.filter(x=>x.type===t).length),total=rs.length||1;document.getElementById("statsType").innerHTML=`<div class="donut" style="--p1:${tc[0]/total*100}%;--p2:${(tc[0]+tc[1])/total*100}%"><div class="donut-center">${rs.length}<small>منفذة</small></div></div><div class="legend">${types.map((t,i)=>`<span><i class="dot"></i>${t}: <b>${tc[i]}</b></span>`).join("")}</div>`;let months={};rs.forEach(x=>{let m=x.date.slice(0,7);months[m]=(months[m]||0)+1});drawH("statsMonth",months);let sc={};rs.forEach(x=>(x.sites||[]).forEach(v=>sc[v]=(sc[v]||0)+1));drawBars("statsSiteBars",sc);let city={};rs.forEach(x=>(x.sites||[]).forEach(v=>{let c=cityOf(v);city[c]=(city[c]||0)+1}));drawBars("statsCityBars",city)}
+function printStats(){let old=document.title;document.title="إحصائيات الجولات المنفذة";window.print();document.title=old}
 function renderReports(){let rs=state.rounds.filter(x=>x.date<=today()),sites=new Set(rs.flatMap(x=>x.sites||[]));document.getElementById("rDone").textContent=rs.length;document.getElementById("rAnn").textContent=rs.filter(x=>x.type==="معلن").length;document.getElementById("rSur").textContent=rs.filter(x=>x.type==="مفاجئ / متابعة").length;document.getElementById("rSpec").textContent=rs.filter(x=>x.type==="متخصص").length;document.getElementById("rSites").textContent=sites.size;
 let types=["معلن","مفاجئ / متابعة","متخصص"], tc=types.map(t=>rs.filter(x=>x.type===t).length), total=rs.length||1;
 document.getElementById("reportType").innerHTML=`<div class="donut" style="--p1:${tc[0]/total*100}%;--p2:${(tc[0]+tc[1])/total*100}%"><div class="donut-center">${rs.length}<small>منفذة</small></div></div><div class="legend">${types.map((t,i)=>`<span><i class="dot"></i>${t}: <b>${tc[i]}</b></span>`).join("")}</div>`;
