@@ -1020,10 +1020,11 @@ function jpegToPdfSafe(b64, imgW, imgH){
 }
 
 async function generateDirectPdf(reportHtml, meta={}){
-  /* V27 — مطابقة بصرية أقرب للنموذج اليدوي: أسماء أوضح، بدون أرقام هواتف، حدود غامقة، وتوقيع سفلي: أبيض/أسود، A4 أفقي،
+  /* V29-ACTIVE: NO-PHONE-NO-SIGNATURE-BOLD */
+  /* V29 — التقرير الرسمي: بدون هواتف وبدون توقيع، أسماء أكبر وأوضح، حدود غامقة جدًا، A4 أفقي،
      عنوان واحد، # والموقع يميناً، مجموعتا مواقع في الرأس، وتقسيمات أفقية داخل الصفوف. */
   try{
-    const W=2480, H=1754, M=38;
+    const W=2480, H=1754, M=28;
     const c=document.createElement('canvas'); c.width=W; c.height=H;
     const ctx=c.getContext('2d'); if(!ctx) throw new Error('Canvas context unavailable');
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.strokeStyle='#111'; ctx.fillStyle='#111';
@@ -1047,15 +1048,15 @@ async function generateDirectPdf(reportHtml, meta={}){
     function same(a,b){return a.join(',')===b.join(',');}
 
     /* title */
-    const titleY=16,titleH=82;
+    const titleY=10,titleH=92;
     rect(L,titleY,innerW,titleH,4);
     const title=`برنامج زيارات ${type} / مكتب المفتش العام ليوم ${day||'—'} الموافق ${dateText} م`;
     center(title,L,titleY,innerW,titleH,fit(title,innerW-54,48,29,true),true);
 
     /* main table */
-    const tableY=112,bottom=H-55,headerH=252;
+    const tableY=108,bottom=H-20,headerH=275;
     const bodyTop=tableY+headerH, bodyH=bottom-bodyTop;
-    const numW=78, axisW=445;
+    const numW=82, axisW=430;
     const siteAreaW=innerW-numW-axisW;
     const siteX=L, axisX=siteX+siteAreaW, numX=axisX+axisW;
     const half=siteAreaW/2;
@@ -1064,9 +1065,9 @@ async function generateDirectPdf(reportHtml, meta={}){
     const rightSites=sites.slice(0,cut), leftSites=sites.slice(cut);
 
     /* header: site groups are merged, exactly like the manual */
-    rect(numX,tableY,numW,headerH,5); center('#',numX,tableY,numW,headerH,39,true);
-    rect(axisX,tableY,axisW,headerH,5); center('الموقع',axisX,tableY,axisW,headerH,39,true);
-    function headerGroup(x,g){rect(x,tableY,half,headerH,5);const list=g.length?g:['—'];let fs=Math.min(40,Math.floor((headerH-18)/Math.max(1,list.length)));fs=Math.max(24,fs);while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v).width<=half-42))break;fs--;}const lh=Math.min(42,(headerH-16)/list.length);let y=tableY+headerH/2-(list.length-1)*lh/2;for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v,x+half/2,y);y+=lh;}}
+    rect(numX,tableY,numW,headerH,5); center('#',numX,tableY,numW,headerH,42,true);
+    rect(axisX,tableY,axisW,headerH,5); center('الموقع',axisX,tableY,axisW,headerH,42,true);
+    function headerGroup(x,g){rect(x,tableY,half,headerH,5);const list=g.length?g:['—'];let fs=Math.min(46,Math.floor((headerH-18)/Math.max(1,list.length)));fs=Math.max(24,fs);while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v).width<=half-42))break;fs--;}const lh=Math.min(42,(headerH-16)/list.length);let y=tableY+headerH/2-(list.length-1)*lh/2;for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v,x+half/2,y);y+=lh;}}
     headerGroup(siteX+half,rightSites); headerGroup(siteX,leftSites);
 
     /* Body rows — preserve the manual's strong black grid and merge cells when the
@@ -1074,15 +1075,15 @@ async function generateDirectPdf(reportHtml, meta={}){
     const rowH=bodyH/SPECS.length;
     for(let i=0;i<SPECS.length;i++){
       const spec=SPECS[i], y=bodyTop+i*rowH;
-      rect(numX,y,numW,rowH,4); center(ar(i+1),numX,y,numW,rowH,30,true);
-      rect(axisX,y,axisW,rowH,4); right(spec,axisX,y+rowH/2,axisW,32,true);
+      rect(numX,y,numW,rowH,4); center(ar(i+1),numX,y,numW,rowH,34,true);
+      rect(axisX,y,axisW,rowH,4); right(spec,axisX,y+rowH/2,axisW,35,true);
       const a=groupIds(rightSites,spec), b=groupIds(leftSites,spec);
       if(same(a,b)){
         rect(siteX,y,siteAreaW,rowH,4);
         const vals=a.map(person).filter(Boolean);
         if(!vals.length){center('***',siteX,y,siteAreaW,rowH,30,true);}
         else{
-          let fs=35; while(fs>19){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=siteAreaW-50))break;fs--;}
+          let fs=44; while(fs>22){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=siteAreaW-50))break;fs--;}
           const lh=Math.min(39,Math.max(24,(rowH-6)/vals.length)); let yy=y+rowH/2-(vals.length-1)*lh/2;
           vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,siteX+siteAreaW-18,yy);yy+=lh;});
         }
@@ -1098,7 +1099,7 @@ async function generateDirectPdf(reportHtml, meta={}){
             const xx=x+(n-k-span)*cw; const ww=cw*span;
             rect(xx,y,ww,rowH,4);
             const vals=ids(g[k],spec).map(person).filter(Boolean);
-            if(vals.length){let fs=34;while(fs>18){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=ww-28))break;fs--;}const lh=Math.min(37,Math.max(23,(rowH-5)/vals.length));let yy=y+rowH/2-(vals.length-1)*lh/2;vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,xx+ww-12,yy);yy+=lh;});}
+            if(vals.length){let fs=42;while(fs>21){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=ww-28))break;fs--;}const lh=Math.min(37,Math.max(23,(rowH-5)/vals.length));let yy=y+rowH/2-(vals.length-1)*lh/2;vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,xx+ww-12,yy);yy+=lh;});}
             k+=span;
           }
         }
