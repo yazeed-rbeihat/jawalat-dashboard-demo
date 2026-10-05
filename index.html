@@ -145,6 +145,62 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   .legend-item{border:1px solid #555;padding:3px 7px;border-radius:4px;background:#fff}
   .legend-item.leader{background:#eef3f8}.legend-item.head{background:#f4f1e8}
 }
+
+/* FINAL PRINT PATCH: ONE A4 LANDSCAPE PAGE */
+@media print{
+  @page{size:A4 landscape;margin:4mm}
+  html,body{width:297mm!important;height:210mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
+  body>*{display:none!important}
+  .print-sheet{display:block!important;direction:rtl;color:#111;background:#fff;font-family:"Tahoma","Arial",sans-serif;width:289mm!important;height:202mm!important;max-height:202mm!important;box-sizing:border-box!important;overflow:hidden!important;font-size:7.2pt!important;page-break-after:avoid!important;break-after:avoid-page!important}
+  .ps-head{border:1.7px solid #111!important;padding:4mm 5mm 2.5mm!important;margin:0 0 2mm!important;background:#fff!important;text-align:center!important;height:20mm!important;box-sizing:border-box!important}
+  .ps-head h1{font-size:14pt!important;line-height:1.1!important;margin:0 0 1mm!important;font-weight:900!important}
+  .ps-head h2{font-size:8.5pt!important;line-height:1.15!important;margin:0.7mm 0!important;font-weight:800!important}
+  .ps-head .muted{font-size:6.2pt!important;margin-top:1mm!important}
+  .ps-info{width:100%!important;height:13mm!important;margin:0 0 2mm!important;border:1.7px solid #111!important;border-collapse:collapse!important;table-layout:fixed!important;font-size:7pt!important}
+  .ps-info th,.ps-info td{border:1px solid #111!important;padding:1.3mm 1.5mm!important;line-height:1.05!important;vertical-align:middle!important;text-align:center!important}
+  .ps-info th{background:#f1f3f5!important;font-weight:900!important;width:11%!important}
+  .ps-info td{font-weight:700!important}
+  .report-legend{display:none!important}
+  .ps-program{width:100%!important;height:147mm!important;margin:0!important;border:1.8px solid #111!important;border-collapse:collapse!important;table-layout:fixed!important;font-size:7.1pt!important;page-break-inside:avoid!important;break-inside:avoid!important}
+  .ps-program thead{display:table-header-group!important}
+  .ps-program tbody{display:table-row-group!important}
+  .ps-program tr{height:9.4mm!important;page-break-inside:avoid!important;break-inside:avoid!important}
+  .ps-program th,.ps-program td{border:1px solid #111!important;padding:1.1mm 1.2mm!important;vertical-align:middle!important;line-height:1.05!important;word-break:normal!important;overflow:hidden!important}
+  .ps-program th{height:8mm!important;background:#dfe5ea!important;font-size:7.4pt!important;font-weight:900!important;text-align:center!important}
+  .ps-program .num-head,.ps-program td:first-child{width:5mm!important;text-align:center!important}
+  .ps-program .axis-head,.ps-program td.axis-name{width:34mm!important}
+  .ps-program .site-head{width:auto!important}
+  .ps-program td.axis-name{background:#edf1f4!important;font-weight:900!important;font-size:7.1pt!important;text-align:right!important}
+  .ps-program td:not(.axis-name){text-align:right!important}
+  .person-card{display:block!important;border:0!important;border-bottom:0!important;border-radius:0!important;padding:0.3mm 0!important;margin:0!important;background:#fff!important;line-height:1.02!important;text-align:right!important;white-space:nowrap!important;overflow:hidden!important}
+  .person-card .person-name{font-size:7pt!important;font-weight:900!important;display:block!important;line-height:1.05!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important}
+  .person-card .person-meta{font-size:5.8pt!important;display:inline!important;margin:0!important;font-weight:700!important}
+  .person-card .person-phone{font-size:5.8pt!important;display:inline!important;margin-right:2mm!important;direction:ltr!important;text-align:right!important;font-weight:700!important}
+  .person-card.leader{background:#eef3f8!important;border:0!important}
+  .person-card.head{background:#f4f1e8!important;border:0!important}
+  .ps-note{display:none!important}
+  .ps-footer{height:8mm!important;margin:2mm 0 0!important;padding:0 3mm!important;display:flex!important;justify-content:space-between!important;align-items:center!important;font-size:7pt!important;font-weight:800!important;border-top:1px solid #111!important}
+}
+
+
+/* FINAL USER REQUEST: merged repeated people across sites + visible phone + no officer strip */
+@media print{
+  .ps-info{height:9mm!important;margin-bottom:2mm!important;font-size:7.2pt!important}
+  .ps-info th,.ps-info td{padding:1mm 1.4mm!important;font-size:7.1pt!important}
+  .ps-program{height:158mm!important;font-size:7.2pt!important}
+  .ps-program tr{height:9.8mm!important}
+  .ps-program th,.ps-program td{border:1.2px solid #111!important;padding:1.15mm 1.4mm!important;vertical-align:middle!important;overflow:hidden!important}
+  .ps-program .row-no,.ps-program td:first-child{width:6mm!important;text-align:center!important;font-weight:800!important}
+  .ps-program .axis-head,.ps-program td.axis-name{width:35mm!important}
+  .ps-program td:not(.axis-name):not(.row-no){text-align:right!important}
+  .person-card{display:block!important;border:0!important;border-radius:0!important;padding:0!important;margin:0!important;background:transparent!important;line-height:1.05!important;text-align:right!important;white-space:nowrap!important;overflow:visible!important}
+  .person-card .person-name{font-size:7.4pt!important;font-weight:900!important;display:inline!important;white-space:nowrap!important}
+  .person-card .person-phone{font-size:6.9pt!important;font-weight:900!important;display:inline!important;margin-right:3mm!important;direction:ltr!important;unicode-bidi:embed!important;white-space:nowrap!important}
+  .person-card.leader{background:#eef3f8!important;font-weight:900!important}
+  .person-card.head{background:#f4f1e8!important;font-weight:900!important}
+  .ps-footer{display:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -469,24 +525,38 @@ function formatPerson(c){
   if(!c)return "";
   const role=(c.role||"");
   const cls=role.includes("قائد")?"leader":(role.includes("رئيس")?"head":"");
-  const phone=c.phone?`<span class="person-phone">☎ ${esc(c.phone)}</span>`:"";
-  return `<div class="person-card ${cls}"><span class="person-name">${esc(c.rank||"")} ${esc(c.name)}</span>${role?`<span class="person-meta">${esc(role)}</span>`:""}${phone}</div>`;
+  const phone=c.phone?`<span class="person-phone">📞 ${esc(c.phone)}</span>`:"";
+  return `<div class="person-card ${cls}"><span class="person-name">${esc(c.rank||"")} ${esc(c.name)}</span>${phone}</div>`;
 }
+function peopleIdsFor(site,spec,assignments){
+  return (Array.isArray(assignments?.[site]?.[spec])?assignments[site][spec]:[]).map(id=>+id).filter(id=>state.crew[id]);
+}
+function peopleSignature(ids){ return ids.join(','); }
 function peopleHtmlFor(site,spec,assignments){
-  const ids=Array.isArray(assignments?.[site]?.[spec])?assignments[site][spec]:[];
-  return ids.map(id=>state.crew[id]).filter(Boolean).map(formatPerson).join("")||"—";
+  return peopleIdsFor(site,spec,assignments).map(id=>formatPerson(state.crew[id])).join("")||"—";
+}
+function buildMergedSiteCells(sites,spec,assignments){
+  let html="", i=0;
+  while(i<sites.length){
+    const ids=peopleIdsFor(sites[i],spec,assignments);
+    const sig=peopleSignature(ids);
+    let span=1;
+    while(i+span<sites.length && peopleSignature(peopleIdsFor(sites[i+span],spec,assignments))===sig) span++;
+    const content=ids.length?ids.map(id=>formatPerson(state.crew[id])).join(""):"—";
+    html+=`<td${span>1?` colspan="${span}"`:""}>${content}</td>`;
+    i+=span;
+  }
+  return html;
 }
 function buildProgramTable(sites,assignments){
   const cols=['#','المحور',...sites];
-  const rows=SPECS.map((spec,i)=>`<tr><td>${i+1}</td><td class="axis-name">${esc(spec)}</td>${sites.map(site=>`<td>${peopleHtmlFor(site,spec,assignments)}</td>`).join("")}</tr>`).join("");
-  return `<div class="report-legend"><span class="legend-item leader">قائد الفريق: خانة مستقلة</span><span class="legend-item head">رئيس الفريق: يظهر هنا وفي محور التفتيش</span><span class="legend-item">المحور: يمكن أن يضم أكثر من شخص</span></div><table class="ps-program official-program"><thead><tr>${cols.map((h,i)=>`<th class="${i===0?'num-head':i===1?'axis-head':'site-head'}">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+  const rows=SPECS.map((spec,i)=>`<tr><td class="row-no">${i+1}</td><td class="axis-name">${esc(spec)}</td>${buildMergedSiteCells(sites,spec,assignments)}</tr>`).join("");
+  return `<table class="ps-program official-program"><thead><tr>${cols.map((h,i)=>`<th class="${i===0?'num-head':i===1?'axis-head':'site-head'}">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 function openDemoReport(){
   const r=DEMO_ROUND_FULL;
   const assignments=r.assignments||{};
-  const officerNames=(r.officers||[]).map(i=>state.crew[i]?.name).filter(Boolean);
-  const selectedCrew=r.crew.map((id,i)=>{const c=state.crew[id];return c?`${i+1}. ${c.rank||""} ${c.name}${c.role?" — "+esc(c.role):""}${c.phone?" — "+c.phone:""}`:""}).filter(Boolean).join("، ");
-  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(r.type)} للجولة — نموذج ديمو مطوّر</h2><div class="muted" style="margin-top:6px">جميع الأسماء والبيانات في هذا التقرير افتراضية ولأغراض العرض فقط</div></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(r.date))}</td><th>وقت الحركة</th><td>${esc(r.time)}</td></tr><tr><th>الضباط المعنيون</th><td colspan="3">${officerNames.map(esc).join("، ")}</td></tr></table>${buildProgramTable(r.sites,assignments)}<div class="ps-note"><b>طاقم الجولة المختار:</b> ${esc(selectedCrew)}</div><div class="ps-note"><b>ملاحظات:</b> ${esc(r.notes)}</div><div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
+  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(r.type)} للجولة — نموذج ديمو مطوّر</h2><div class="muted" style="margin-top:6px">جميع الأسماء والبيانات في هذا التقرير افتراضية ولأغراض العرض فقط</div></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(r.date))}</td><th>وقت الحركة</th><td>${esc(r.time)}</td><th>نوع الجولة</th><td>${esc(r.type)}</td></tr></table>${buildProgramTable(r.sites,assignments)}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
   window.print();
 }
 
@@ -500,8 +570,7 @@ function printCurrentRound(){
   let time=document.getElementById("rTime").value||"—";
   let notes=document.getElementById("rNotes").value||"";
   if(!sites.length){alert("يرجى اختيار موقع واحد على الأقل");return;}
-  const selectedCrew=crew.length?crew.map((c,i)=>`${i+1}. ${c.rank||""} ${c.name}${c.role?" — "+esc(c.role):""}${c.phone?" — "+c.phone:""}`).join("، "):"—";
-  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(type)} للجولة — نموذج مطوّر</h2></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(date))}</td><th>وقت الحركة</th><td>${esc(time)}</td></tr><tr><th>الضباط المعنيون</th><td colspan="3">${officerNames.length?officerNames.map(esc).join("، "):"—"}</td></tr></table>${buildProgramTable(sites,assignments)}<div class="ps-note"><b>طاقم الجولة المختار:</b> ${esc(selectedCrew)}</div>${notes?`<div class="ps-note"><b>ملاحظات:</b> ${esc(notes)}</div>`:""}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
+  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(type)} للجولة — نموذج مطوّر</h2></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(date))}</td><th>وقت الحركة</th><td>${esc(time)}</td><th>نوع الجولة</th><td>${esc(type)}</td></tr></table>${buildProgramTable(sites,assignments)}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
   window.print();
 }
 
