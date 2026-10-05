@@ -1003,11 +1003,40 @@ function buildProgramTable(sites,assignments){
   const widths=siteCols.map(()=>`<col class="site-col">`).join("")+`<col class="axis-col"><col class="num-col">`;
   return `<table dir="rtl" class="program-table ps-program exact-official"><colgroup>${widths}</colgroup><thead><tr>${siteCols.map(c=>`<th class="site-head"><div class="site-name">${esc(c)}</div></th>`).join("")}<th class="axis-head">الموقع</th><th class="num-head">#</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
+
+function jpegToPdfSafe(b64, imgW, imgH){
+  // Minimal, self-contained one-page PDF: embeds the JPEG directly as a DCT image.
+  const bin=atob(b64);
+  const img=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) img[i]=bin.charCodeAt(i);
+  const pageW=841.8898, pageH=595.2756; // A4 landscape, points
+  const objects=[];
+  objects.push('<< /Type /Catalog /Pages 2 0 R >>');
+  objects.push('<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>`);
+  const content=`q\n${pageW} 0 0 ${pageH} 0 0 cm\n/Im0 Do\nQ\n`;
+  objects.push(`<< /Length ${content.length} >>\nstream\n${content}endstream`);
+  objects.push(`<< /Type /XObject /Subtype /Image /Width ${imgW} /Height ${imgH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>\nstream\n${String.fromCharCode(...img)}\nendstream`);
+  let pdf='%PDF-1.4\n%\xFF\xFF\xFF\xFF\n';
+  const offsets=[0];
+  for(let i=0;i<objects.length;i++){
+    offsets[i+1]=pdf.length;
+    pdf+=`${i+1} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+  const xref=pdf.length;
+  pdf+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n`;
+  for(let i=1;i<offsets.length;i++) pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+  pdf+=`trailer\n<< /Size ${objects.length+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  const out=new Uint8Array(pdf.length);
+  for(let i=0;i<pdf.length;i++) out[i]=pdf.charCodeAt(i)&255;
+  return out;
+}
+
 async function generateDirectPdf(reportHtml, meta={}){
-  // V21 — exact manual-form geometry: monochrome, no meta strip, merged site headers,
+  // V22 — exact manual-form geometry: monochrome, no meta strip, merged site headers,
   // RTL visual order (# -> الموقع -> site groups from right to left), full-page landscape.
   try{
-    const W=2200, H=1450, M=24;
+    const W=2200, H=1556, M=24;
     const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
     const ctx=canvas.getContext('2d'); if(!ctx) throw new Error('Canvas context unavailable');
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.strokeStyle='#000'; ctx.fillStyle='#000';
@@ -1118,7 +1147,7 @@ async function generateDirectPdf(reportHtml, meta={}){
     const opened=window.open(url,'_blank');
     if(!opened){const a=document.createElement('a');a.href=url;a.download='برنامج_الجولة_نسخة_مطابقة_للنموذج.pdf';document.body.appendChild(a);a.click();a.remove();}
     setTimeout(()=>URL.revokeObjectURL(url),120000);
-  }catch(e){console.error('V21 PDF error',e);printCleanDocument(reportHtml);}
+  }catch(e){console.error('V22 PDF error',e); alert('تعذر إنشاء ملف PDF مباشرة: '+(e?.message||e));}
 }
 
 function printCleanDocument(reportHtml){
