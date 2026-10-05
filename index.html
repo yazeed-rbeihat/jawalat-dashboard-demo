@@ -117,6 +117,34 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .axis-row .axisBox{width:100%;min-height:92px;border:1px solid #cbd7e1;border-radius:9px;padding:5px;background:#fff}
 @media(max-width:700px){.axis-row{grid-template-columns:1fr}.axis-row .axisBox{min-height:120px}}
 
+
+.official-program{font-size:8.5px;direction:rtl}.official-program .num-head{width:3%}.official-program .axis-head{width:13%}.official-program .site-head{width:auto}.official-program td.axis-name{text-align:right;font-weight:800;white-space:normal}.official-program td{min-height:48px}.official-program small{font-size:7.5px}.site-axis-block{border:1px solid #bbb;border-radius:8px;margin:8px 0;padding:8px}.site-axis-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}.site-axis-title b{font-size:13px}.site-axis-title .muted{font-size:11px}.ps-program{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:9px}.ps-program th,.ps-program td{border:1px solid #222;padding:4px 3px;vertical-align:middle;text-align:center;word-break:break-word}.ps-program th{background:#e9e9e9;font-weight:800}.ps-program .site-head{width:18%}.ps-program td.site-cell{text-align:right;font-weight:700}.ps-program td:not(.site-cell){min-height:42px}.ps-head{text-align:center}.ps-head h1{margin:0 0 4px}.ps-head h2{margin:2px 0;font-size:14px}.ps-info{margin-top:8px;font-size:10px}.ps-info th{width:12%;background:#eee}.ps-info td{text-align:center}.ps-footer{display:flex;justify-content:space-between;margin-top:24px;font-size:11px}
+
+/* تحسين برنامج الجولة: حدود واضحة + أسماء بارزة + تمييز بصري عن النموذج الأصلي */
+@media print{
+  .ps-head{border:2.5px solid #111;padding:12px 14px;margin-bottom:10px;background:#f7f9fc}
+  .ps-head h1{font-size:20px;font-weight:900;letter-spacing:.2px}
+  .ps-head h2{font-size:14px;font-weight:900}
+  .ps-info{border:2px solid #111!important;border-collapse:collapse!important;margin-bottom:10px}
+  .ps-info th,.ps-info td{border:1.5px solid #222!important;padding:7px 6px!important;font-size:10.5pt}
+  .ps-info th{font-weight:900;background:#e9eef5!important}
+  .ps-program{border:2.5px solid #111!important;border-collapse:collapse!important;font-size:9.5pt!important}
+  .ps-program th,.ps-program td{border:1.5px solid #111!important;padding:7px 5px!important;vertical-align:top!important}
+  .ps-program th{background:#dfe7f0!important;font-size:10pt;font-weight:900!important;text-align:center}
+  .ps-program td.axis-name{background:#eef2f6!important;font-weight:900!important;font-size:9.5pt!important}
+  .ps-program td{min-height:58px!important}
+  .ps-program tbody tr:nth-child(even) td{background:#fafbfd}
+  .ps-program tbody tr:nth-child(even) td.axis-name{background:#e7edf3}
+  .person-card{display:block;border:1px solid #555;border-radius:5px;padding:4px 5px;margin:2px 0;background:#fff;line-height:1.35;text-align:right}
+  .person-card .person-name{font-size:10pt;font-weight:900;display:block}
+  .person-card .person-meta{font-size:8pt;display:block;margin-top:1px;font-weight:700}
+  .person-card .person-phone{font-size:7.5pt;display:block;margin-top:1px;direction:ltr;text-align:right}
+  .person-card.leader{border:2px solid #111;background:#eef3f8}
+  .person-card.head{border:2px dashed #333;background:#f4f1e8}
+  .report-legend{display:flex;gap:8px;justify-content:center;align-items:center;margin:7px 0;font-size:8.5pt;font-weight:800}
+  .legend-item{border:1px solid #555;padding:3px 7px;border-radius:4px;background:#fff}
+  .legend-item.leader{background:#eef3f8}.legend-item.head{background:#f4f1e8}
+}
 </style>
 </head>
 <body>
@@ -145,7 +173,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 <button class="nav active" onclick="go('home',this)">الرئيسية</button>
 <button class="nav" onclick="go('rounds',this)">الجولات</button>
 <button class="nav" onclick="go('crew',this)">طاقم الجولة</button>
-<button class="nav" onclick="go('program',this)">برنامج الجولة</button>
+<button class="nav" onclick="go('program',this)">برنامج الجولة</button><button class="nav" onclick="openDemoReport()">تقرير ديمو</button>
 <button class="nav" onclick="go('spec',this)">التخصصات</button>
 <button class="nav" onclick="go('mapsec',this)">الخريطة</button>
 <button class="nav" onclick="go('stats',this)">الإحصائيات</button>
@@ -233,8 +261,8 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 
 <section id="settings" style="margin-top:18px"><div class="panel">
 <h2>الإعدادات</h2>
-<div class="filters"><button class="action secondary" onclick="exportBackup()">تصدير نسخة احتياطية</button><button class="action secondary" onclick="importBackup()">استيراد نسخة احتياطية</button><button class="action secondary" onclick="seedDemo()">إعادة تحميل بيانات العرض</button></div>
-<p class="muted">هذه نسخة GitHub تجريبية: البيانات تحفظ في LocalStorage في جهاز المستخدم. نظام المستخدمين هنا مناسب للعرض والنموذج الأولي، وليس بديلاً عن نظام مصادقة مركزي آمن.</p>
+<div class="filters"><button class="action" onclick="openExcelImport()">📥 استيراد الجولات من Excel</button><button class="action success" onclick="exportRoundsExcel()">📤 تصدير الجولات إلى Excel</button><button class="action secondary" onclick="downloadExcelTemplate()">📄 تحميل نموذج Excel</button><button class="action secondary" onclick="exportBackup()">تصدير نسخة احتياطية</button><button class="action secondary" onclick="importBackup()">استيراد نسخة احتياطية</button><button class="action secondary" onclick="seedDemo()">إعادة تحميل بيانات العرض</button></div>
+<p class="muted">هذه نسخة GitHub تجريبية: البيانات تحفظ في LocalStorage في جهاز المستخدم. يمكن استيراد الجولات من Excel أو إدخالها يدوياً، ثم اختيار الطاقم وربط كل عضو بمحوره وإخراج برنامج الجولة للطباعة/PDF. نظام المستخدمين هنا مناسب للعرض والنموذج الأولي، وليس بديلاً عن نظام مصادقة مركزي آمن.</p>
 </div></section>
 
 <div class="footer">تصميم وإعداد الرائد المهندس يزيد الربيحات</div>
@@ -259,7 +287,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 <!-- Crew modal -->
 <div class="modal" id="crewModal"><div class="dialog"><div class="dialog-head"><h2>عضو طاقم</h2><button class="close" onclick="closeModal('crewModal')">✕</button></div><div class="dialog-body"><div class="form-grid">
 <label>الاسم<input id="cName"></label><label>الرتبة<input id="cRank"></label>
-<label>التخصص<select id="cSpec"></select></label><label>صفة الطاقم<select id="cRole"><option>عضو</option><option>رئيس فريق</option></select></label>
+<label>التخصص<select id="cSpec"></select></label><label>صفة الطاقم<select id="cRole"><option>عضو</option><option>رئيس فريق</option><option>قائد فريق</option></select></label>
 <label>الهاتف<input id="cPhone"></label><label>ملاحظات<input id="cNotes"></label>
 </div></div><div class="dialog-actions"><button class="action" onclick="saveCrew()">حفظ</button><button class="action secondary" onclick="closeModal('crewModal')">إلغاء</button></div></div></div>
 
@@ -282,11 +310,39 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 
 <div class="print-sheet" id="printSheet"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-const SPECS=["قائد الفريق","المظهر العام","ديوان وقوى بشرية","التدريب والتخطيط والعمليات","اتصالات","العهدة","أبنية","زيوت ومحروقات","قضائية","مواد خطرة + مسرح الجريمة","إنقاذ + إطفاء + إسعاف","الفني الانضباطي / آليات","الفني الانضباطي / أسلحة","شعبة الرقابة المالية"];
+const SPECS=["قائد الفريق","المظهر العام","رئيس الفريق","ديوان وقوى بشرية","التدريب والتخطيط والعمليات","اتصالات","العهدة","أبنية","زيوت ومحروقات","قضائية","مواد خطرة + مسرح الجريمة","إنقاذ + إطفاء + إسعاف","الفني الانضباطي / آليات","الفني الانضباطي / أسلحة","شعبة الرقابة المالية"];
+const DEMO_CREW=[
+{name:"أحمد سامي العياصرة",rank:"الرائد",spec:"قائد الفريق",role:"قائد فريق",phone:"0799000001",notes:"اسم افتراضي للديمو"},
+{name:"خالد محمود الحياري",rank:"النقيب",spec:"المظهر العام",role:"عضو",phone:"0799000002",notes:"اسم افتراضي للديمو"},
+{name:"سامر فؤاد الزعبي",rank:"النقيب",spec:"ديوان وقوى بشرية",role:"عضو",phone:"0799000003",notes:"اسم افتراضي للديمو"},
+{name:"رامي يوسف الشديفات",rank:"الملازم الأول",spec:"التدريب والتخطيط والعمليات",role:"عضو",phone:"0799000004",notes:"اسم افتراضي للديمو"},
+{name:"محمود ناصر الرواشدة",rank:"الملازم الأول",spec:"اتصالات",role:"عضو",phone:"0799000005",notes:"اسم افتراضي للديمو"},
+{name:"يزن طارق الحجايا",rank:"الملازم",spec:"العهدة",role:"عضو",phone:"0799000006",notes:"اسم افتراضي للديمو"},
+{name:"باسم عادل المشاقبة",rank:"الملازم",spec:"أبنية",role:"عضو",phone:"0799000007",notes:"اسم افتراضي للديمو"},
+{name:"معاذ وليد العمري",rank:"الملازم",spec:"زيوت ومحروقات",role:"عضو",phone:"0799000008",notes:"اسم افتراضي للديمو"},
+{name:"عمر رائد الخوالدة",rank:"الملازم",spec:"قضائية",role:"عضو",phone:"0799000009",notes:"اسم افتراضي للديمو"},
+{name:"فراس حسن الشرايري",rank:"الملازم",spec:"مواد خطرة + مسرح الجريمة",role:"عضو",phone:"0799000010",notes:"اسم افتراضي للديمو"},
+{name:"أيمن سامح الزبن",rank:"الملازم",spec:"إنقاذ + إطفاء + إسعاف",role:"عضو",phone:"0799000011",notes:"اسم افتراضي للديمو"},
+{name:"علاء نجيب الطراونة",rank:"الملازم",spec:"الفني الانضباطي / آليات",role:"عضو",phone:"0799000012",notes:"اسم افتراضي للديمو"},
+{name:"مؤيد فالح بني خالد",rank:"الملازم",spec:"الفني الانضباطي / أسلحة",role:"عضو",phone:"0799000013",notes:"اسم افتراضي للديمو"},
+{name:"سائد كمال العجارمة",rank:"الملازم",spec:"شعبة الرقابة المالية",role:"عضو",phone:"0799000014",notes:"اسم افتراضي للديمو"},
+{name:"فادي إبراهيم الرواشدة",rank:"النقيب",spec:"اتصالات",role:"رئيس فريق",phone:"0799000015",notes:"اسم افتراضي للديمو — يظهر كرئيس فريق وفي محور الاتصالات"}
+];
+const DEMO_ASSIGNMENTS_BY_SITE={
+"مركز أمن إربد الشمالي":{
+"قائد الفريق":[0],"رئيس الفريق":[14],"رئيس الفريق":[14],"المظهر العام":[1],"ديوان وقوى بشرية":[2,3],"التدريب والتخطيط والعمليات":[3],"اتصالات":[4,5,14],"العهدة":[5],"أبنية":[6,7],"زيوت ومحروقات":[7],"قضائية":[8],"مواد خطرة + مسرح الجريمة":[9],"إنقاذ + إطفاء + إسعاف":[10,11],"الفني الانضباطي / آليات":[11,12],"الفني الانضباطي / أسلحة":[12,13],"شعبة الرقابة المالية":[13]},
+"مفرزة بحث جنائي إربد الشمالي":{
+"قائد الفريق":[0],"رئيس الفريق":[14],"المظهر العام":[1,2],"ديوان وقوى بشرية":[2],"التدريب والتخطيط والعمليات":[3,4],"اتصالات":[4,14],"العهدة":[5,6],"أبنية":[6],"زيوت ومحروقات":[7,8],"قضائية":[8,9],"مواد خطرة + مسرح الجريمة":[9],"إنقاذ + إطفاء + إسعاف":[10],"الفني الانضباطي / آليات":[11],"الفني الانضباطي / أسلحة":[12],"شعبة الرقابة المالية":[13]},
+"مركز دفاع مدني إربد":{
+"قائد الفريق":[0],"رئيس الفريق":[14],"المظهر العام":[1],"ديوان وقوى بشرية":[2],"التدريب والتخطيط والعمليات":[3],"اتصالات":[4,14],"العهدة":[5],"أبنية":[6],"زيوت ومحروقات":[7,8],"قضائية":[8],"مواد خطرة + مسرح الجريمة":[9,10],"إنقاذ + إطفاء + إسعاف":[10,11,12],"الفني الانضباطي / آليات":[11,12],"الفني الانضباطي / أسلحة":[12],"شعبة الرقابة المالية":[13]}
+};
+const DEMO_ROUND_FULL={id:"DEMO-001",date:"2026-10-06",type:"مفاجئ / متابعة",sites:["مركز أمن إربد الشمالي","مفرزة بحث جنائي إربد الشمالي","مركز دفاع مدني إربد"],time:"08:00",officer:"أحمد سامي العياصرة، خالد محمود الحياري",officers:[0,1],officerExtra:"",notes:"برنامج تجريبي للعرض فقط — جميع الأسماء افتراضية. تم توزيع أكثر من شخص على عدد من المحاور لإظهار شكل النموذج الرسمي.",crew:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14],assignments:DEMO_ASSIGNMENTS_BY_SITE};
+
 const CITIES={"عمان":[31.9539,35.9106],"اربد":[32.5556,35.8500],"الزرقاء":[32.0728,36.0879],"مادبا":[31.7167,35.8000],"جرش":[32.2746,35.8961],"عجلون":[32.3333,35.7500],"الكرك":[31.1853,35.7047],"الطفيلة":[30.8333,35.6000],"معان":[30.1962,35.7345],"العقبة":[29.5321,35.0063],"الرمثا":[32.5587,36.0088],"الشونة الجنوبية":[31.0095,35.6090],"البتراء":[30.3285,35.4444],"ذيبان":[31.5010,35.8000],"مرج الحمام":[31.9050,35.8500],"صويلح":[31.995,35.830],"مأدبا":[31.7167,35.8000]};
 const SITES=["مركز أمن إربد الشمالي","مفرزة بحث جنائي إربد الشمالي","مركز دفاع مدني إربد","قسم مكافحة مخدرات شمال عمان","قسم مسرح جريمة شمال عمان","مفرزة أمن وقائي صويلح","مكتب الشرطة المجتمعية الكورة","مركز أمن المدينة / الرمثا","فريق معالجة متفجرات الرمثا","قسم ترخيص الأغوار الجنوبية","مفرزة أمن وقائي مأدبا الشرقي","فريق معالجة متفجرات مادبا","قسم سير جنوب عمان","قسم ترخيص غرب عمان (مرج الحمام)","قسم سير الزرقاء","مفرزة أمن وقائي الشويك","مفرزة بحث جنائي الشويك","محطة اللجون الأمنية / الدوريات الخارجية","مكتب الشرطة المجتمعية المدينة / عجلون","فرع مكافحة مخدرات عجلون"];
-const KEY="jawalat_github_v2";
+const KEY="jawalat_github_demo_v3";
 const DEMO_ROUNDS=[{"date":"2026-09-10","type":"معلن","sites":["مركز امن اربد الشمالي"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-10","type":"معلن","sites":["مفرزة بحث جنائي اربد الشمالي"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-11","type":"معلن","sites":["مركز دفاع مدني المدينة / شرق اربد"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-11","type":"معلن","sites":["محطة الموجب السفلي الامنية / الدوريات الخارجية"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-12","type":"معلن","sites":["قسم مكافحة مخدرات شمال عمان"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-12","type":"معلن","sites":["قسم مسرح جريمة شمال عمان"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-13","type":"معلن","sites":["مفرزة امن وقائي صويلح"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-13","type":"معلن","sites":["مكتب الشرطة المجتمعية الكورة"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-14","type":"معلن","sites":["مركز امن المدينة / الرمثا"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-14","type":"معلن","sites":["فريق معالجة متفجرات الرمثا"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-15","type":"معلن","sites":["قسم ترخيص الاغوار الجنوبية"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-15","type":"معلن","sites":["مفرزة امن وقائي مأدبا الشرقي"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-16","type":"معلن","sites":["فريق معالجة متفجرات مادبا"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-16","type":"معلن","sites":["قسم سير جنوب عمان"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-17","type":"متخصص","sites":["قسم ترخيص غرب عمان (مرج الحمام)"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-17","type":"متخصص","sites":["قسم سير الزرقاء"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-18","type":"مفاجئ / متابعة","sites":["مفرزة امن وقائي الشويك"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-18","type":"مفاجئ / متابعة","sites":["مفرزة بحث جنائي الشويك"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-19","type":"مفاجئ / متابعة","sites":["محطة اللجون الامنية / الدوريات الخارجية"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-19","type":"متخصص","sites":["مكتب الشرطة المجتمعية المدينة / عجلون"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-20","type":"متخصص","sites":["فرع مكافحة مخدرات عجلون"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-20","type":"معلن","sites":["فرع دوريات الشونة الجنوبية"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-21","type":"معلن","sites":["نقطة شرطة الكرامة"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-21","type":"معلن","sites":["مركز دفاع مدني الشونة الجنوبية"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-22","type":"متخصص","sites":["مركز امن المدينة المتكامل / جرش"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-22","type":"متخصص","sites":["فرع حماية البيئة عجلون"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-23","type":"معلن","sites":["قسم حماية الاسرة والاحداث الكرك"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-23","type":"معلن","sites":["قسم سير الكرك"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-24","type":"معلن","sites":["مركز امن المدينة / الطفيلة"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-24","type":"معلن","sites":["مركز دفاع مدني راس الفيل"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-25","type":"متخصص","sites":["مفرزة بحث جنائي المهاجرين"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-25","type":"معلن","sites":["ادارة امن الجسور"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-26","type":"معلن","sites":["فريق معالجة متفجرات اربد"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-26","type":"متخصص","sites":["شعبة مكافحة الجرائم الالكترونية الشمال"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-27","type":"معلن","sites":["مركز امن ذيبان"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-27","type":"معلن","sites":["مركز دفاع مدني ذيبان"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-28","type":"متخصص","sites":["مركز امن مرج الحمام"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-28","type":"متخصص","sites":["مفرزة بحث جنائي مرج الحمام"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-29","type":"معلن","sites":["مركز امن الشونة الجنوبية"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-29","type":"معلن","sites":["قسم سير شمال عمان"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-09-30","type":"معلن","sites":["قسم ترخيص شمال عمان"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-01","type":"متخصص","sites":["مركز امن الحسين"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-01","type":"متخصص","sites":["فرع حماية البيئة جنوب عمان"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-02","type":"معلن","sites":["قسم اتصالات وتكنولوجيا المعلومات / الاشرفية"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-02","type":"معلن","sites":["فرع اصدار زهران"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-03","type":"معلن","sites":["مركز دفاع مدني العبدلي"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-03","type":"معلن","sites":["مركز دفاع مدني وادي صقرة"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-04","type":"متخصص","sites":["مركز امن شمال جرش المتكامل"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-04","type":"معلن","sites":["مركز امن سهل حوران المتكامل"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-05","type":"معلن","sites":["مركز امن المنطقة الحرة"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-05","type":"معلن","sites":["مركز امن البتراء"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-06","type":"متخصص","sites":["فرع تنفيذ قضائي البتراء"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-06","type":"معلن","sites":["مركز دفاع مدني اقليم البتراء"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-07","type":"معلن","sites":["مركز امن الاغوار الجنوبية"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-07","type":"معلن","sites":["مركز دفاع مدني غور الصافي"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-08","type":"متخصص","sites":["مركز امن ياجوز"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-08","type":"متخصص","sites":["مركز امن الضليل"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-09","type":"معلن","sites":["مركز امن القويرة"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-09","type":"معلن","sites":["مركز دفاع مدني الشامية"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-10","type":"متخصص","sites":["مركز امن المدينة / العقبة"],"time":"","officer":"","notes":"","crew":[]},{"date":"2026-10-10","type":"معلن","sites":["قسم سير العقبة"],"time":"","officer":"","notes":"","crew":[]}];
 const DEFAULT_USERS=[{u:"admin",full:"مدير النظام",pass:"admin",job:"مدير النظام",role:"مدير النظام",p:{add:true,multi:true,crew:true,users:true,reports:true,map:true}}];
 const storedState=JSON.parse(localStorage.getItem(KEY)||"null");
@@ -296,8 +352,8 @@ const migratedLegacy=legacyRounds.filter(r=>r&&((r.date||r.d)&&(r.sites||r.s))).
   id:r.id||Date.now()+Math.random(),date:r.date||r.d,type:r.type||r.t||"معلن",sites:r.sites||(r.s?[r.s]:[]),time:r.time||r.m||"",officer:r.officer||r.o||"",notes:r.notes||r.n||"",crew:r.crew||[]
 }));
 let state=(storedState&&Array.isArray(storedState.rounds)&&storedState.rounds.length)?storedState:{
-  rounds:migratedLegacy.length?migratedLegacy:DEMO_ROUNDS,
-  crew:(storedState&&Array.isArray(storedState.crew))?storedState.crew:[],
+  rounds:migratedLegacy.length?migratedLegacy:[DEMO_ROUND_FULL,...DEMO_ROUNDS],
+  crew:(storedState&&Array.isArray(storedState.crew)&&storedState.crew.length)?storedState.crew:DEMO_CREW,
   users:(storedState&&Array.isArray(storedState.users)&&storedState.users.length)?storedState.users:DEFAULT_USERS
 };
 if(!storedState||!Array.isArray(storedState.rounds)||!storedState.rounds.length)localStorage.setItem(KEY,JSON.stringify(state));
@@ -340,12 +396,47 @@ function drawBars(id,obj){let el=document.getElementById(id),e=Object.entries(ob
 function cityOf(s){for(let c of Object.keys(CITIES))if(s.includes(c))return c; if(s.includes("إربد"))return "اربد";if(s.includes("مادبا"))return "مادبا";if(s.includes("عمان"))return "عمان";if(s.includes("الزرقاء"))return "الزرقاء";return "غير محدد"}
 function initMaps(){if(!window.L)return;map1=L.map("map").setView([31.2,36.1],7);map2=L.map("map2").setView([31.2,36.1],7);[map1,map2].forEach(m=>L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(m));drawMaps()}
 function drawMaps(){if(!map1||!map2)return;[map1,map2].forEach(m=>m.eachLayer(l=>{if(l instanceof L.Marker)m.remove()}));let counts={};state.rounds.forEach(r=>(r.sites||[]).forEach(s=>{let c=cityOf(s);if(CITIES[c])counts[c]=(counts[c]||0)+1}));Object.entries(counts).forEach(([c,n])=>[map1,map2].forEach(m=>L.marker(CITIES[c]).addTo(m).bindPopup(`<b>${esc(c)}</b><br>عدد الجولات: ${n}<br><button onclick="showCity('${esc(c)}')">عرض الجولات</button>`)))}
-function crewOptions(selected=[]){return state.crew.map((c,i)=>`<option value="${i}" ${selected.includes(i)?"selected":""}>${esc(c.name)} — ${esc(c.rank||"")} — ${esc(c.spec||"")}${c.role==="رئيس فريق"?" — رئيس فريق":""}</option>`).join("")}
+function crewOptions(selected=[],spec=""){return state.crew.map((c,i)=>{if(spec==="قائد الفريق" && c.role!=="قائد فريق")return "";if(spec==="رئيس الفريق" && c.role!=="رئيس فريق")return "";if(spec!=="قائد الفريق" && c.role==="قائد فريق")return "";return `<option value="${i}" ${selected.includes(i)?"selected":""}>${esc(c.name)} — ${esc(c.rank||"")}${c.role?" — "+esc(c.role):""}${c.phone?" — "+esc(c.phone):""}</option>`}).join("")}
 function renderOfficerPick(selected=[]){document.getElementById("officerPick").innerHTML=state.crew.length?state.crew.map((c,i)=>`<label><input type="checkbox" class="officerBox" value="${i}" ${selected.includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.rank||"")}</label>`).join(""):"<div class='muted'>أضف الضباط/أعضاء الطاقم أولاً من صفحة طاقم الجولة.</div>"}
-function renderAxisAssignments(assignments={}){document.getElementById("axisAssignments").innerHTML=SPECS.map((spec,i)=>{let selected=Array.isArray(assignments[spec])?assignments[spec]:[];return `<div class="axis-row"><div><b>${i+1}. ${esc(spec)}</b><small>يمكن اختيار أكثر من معني</small></div><select class="axisBox" data-spec="${esc(spec)}" multiple size="4">${crewOptions(selected)}</select></div>`}).join("")}
-function readAxisAssignments(){let out={};document.querySelectorAll(".axisBox").forEach(sel=>{let vals=[...sel.selectedOptions].map(o=>+o.value);if(vals.length)out[sel.dataset.spec]=vals});return out}
+function normalizeAssignments(assignments={},sites=[]){
+  if(!assignments||typeof assignments!=="object") return {};
+  const first=Object.keys(assignments)[0];
+  if(first && SPECS.includes(first)){
+    const out={}; sites.forEach(site=>{out[site]={}; SPECS.forEach(spec=>{if(Array.isArray(assignments[spec])&&assignments[spec].length)out[site][spec]=[...assignments[spec]]});}); return out;
+  }
+  return assignments;
+}
+function renderAxisAssignments(assignments={}){
+  const box=document.getElementById("axisAssignments");
+  const sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value);
+  if(!sites.length){box.innerHTML='<div class="muted">اختر المواقع أولاً، ثم وزّع أكثر من شخص على كل محور عند الحاجة.</div>';return;}
+  const norm=normalizeAssignments(assignments,sites);
+  box.innerHTML=sites.map((site,si)=>{
+    const sa=norm[site]||{};
+    return `<div class="site-axis-block"><div class="site-axis-title"><b>الموقع ${si+1}: ${esc(site)}</b><span class="muted">قائد الفريق مستقل، ورئيس الفريق يظهر هنا وفي محوره، ويمكن اختيار عدة أشخاص داخل كل محور</span></div>
+      ${SPECS.map((spec,i)=>{const selected=Array.isArray(sa[spec])?sa[spec]:[];return `<div class="axis-row"><div><b>${i+1}. ${esc(spec)}</b><small>أكثر من شخص مسموح</small></div><select class="axisBox" data-site="${esc(site)}" data-spec="${esc(spec)}" multiple size="3">${crewOptions(selected,spec)}</select></div>`}).join("")}
+    </div>`;
+  }).join("");
+}
+function readAxisAssignments(){
+  let out={};
+  document.querySelectorAll(".axisBox").forEach(sel=>{
+    const site=sel.dataset.site,spec=sel.dataset.spec;
+    const vals=[...sel.selectedOptions].map(o=>+o.value);
+    if(!out[site]) out[site]={};
+    if(vals.length) out[site][spec]=vals;
+  });
+  Object.keys(out).forEach(site=>{if(!Object.keys(out[site]).length)delete out[site]});
+  return out;
+}
+function bindSiteAssignmentRefresh(existing={}){
+  document.querySelectorAll(".siteBox").forEach(cb=>cb.addEventListener("change",()=>{
+    const current=readAxisAssignments();
+    renderAxisAssignments(Object.keys(current).length?current:existing);
+  }));
+}
 function selectedOfficerNames(){let names=[...document.querySelectorAll(".officerBox:checked")].map(x=>state.crew[+x.value]?.name).filter(Boolean);let extra=(document.getElementById("rOfficerExtra")?.value||"").split(/[,،\n]+/).map(x=>x.trim()).filter(Boolean);return [...names,...extra]}
-function addRound(){editRoundId=-1;if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");document.getElementById("rDate").value=today();document.getElementById("rType").value="معلن";document.getElementById("rTime").value="";document.getElementById("rOfficerExtra").value="";document.getElementById("rNotes").value="";document.getElementById("roundTitle").textContent="إضافة جولة / برنامج زيارة";document.getElementById("sitePick").innerHTML=SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}"> ${esc(s)}</label>`).join("");document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}"> ${esc(c.name)} — ${esc(c.spec)}${c.role==="رئيس فريق"?" — رئيس فريق":""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";renderOfficerPick([]);renderAxisAssignments({});openModal("roundModal")}
+function addRound(){editRoundId=-1;if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");document.getElementById("rDate").value=today();document.getElementById("rType").value="معلن";document.getElementById("rTime").value="";document.getElementById("rOfficerExtra").value="";document.getElementById("rNotes").value="";document.getElementById("roundTitle").textContent="إضافة جولة / برنامج زيارة";document.getElementById("sitePick").innerHTML=SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}"> ${esc(s)}</label>`).join("");document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}"> ${esc(c.name)} — ${esc(c.spec)}${c.role?" — "+esc(c.role):""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";renderOfficerPick([]);renderAxisAssignments({});bindSiteAssignmentRefresh({});openModal("roundModal")}
 function saveRound(){
   let sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value);
   if(!sites.length)return alert("اختر موقعاً واحداً على الأقل");
@@ -363,8 +454,8 @@ function editRound(id){
   let r=state.rounds.find(x=>x.id===id);if(!r)return;
   editRoundId=id;document.getElementById("rDate").value=r.date;document.getElementById("rType").value=r.type;document.getElementById("rTime").value=r.time||"";document.getElementById("rOfficerExtra").value=r.officerExtra||"";document.getElementById("rNotes").value=r.notes||"";document.getElementById("roundTitle").textContent="تعديل برنامج الجولة";
   document.getElementById("sitePick").innerHTML=SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}" ${(r.sites||[]).includes(s)?"checked":""}> ${esc(s)}</label>`).join("");
-  document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}" ${(r.crew||[]).includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.spec)}${c.role==="رئيس فريق"?" — رئيس فريق":""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";
-  let selectedOfficers=Array.isArray(r.officers)?r.officers:[];if(!selectedOfficers.length&&r.officer){let parts=r.officer.split(/،|,/).map(x=>x.trim());selectedOfficers=state.crew.map((c,i)=>parts.includes(c.name)?i:-1).filter(i=>i>=0)}renderOfficerPick(selectedOfficers);renderAxisAssignments(r.assignments||{});openModal("roundModal")
+  document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}" ${(r.crew||[]).includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.spec)}${c.role?" — "+esc(c.role):""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";
+  let selectedOfficers=Array.isArray(r.officers)?r.officers:[];if(!selectedOfficers.length&&r.officer){let parts=r.officer.split(/،|,/).map(x=>x.trim());selectedOfficers=state.crew.map((c,i)=>parts.includes(c.name)?i:-1).filter(i=>i>=0)}renderOfficerPick(selectedOfficers);renderAxisAssignments(r.assignments||{});bindSiteAssignmentRefresh(r.assignments||{});openModal("roundModal")
 }
 function arabicDateFull(v){
   if(!v)return "";
@@ -374,48 +465,43 @@ function arabicDateFull(v){
   const pad=n=>String(n).padStart(2,'0');
   return `${days[d.getDay()]} الموافق ${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
 }
+function formatPerson(c){
+  if(!c)return "";
+  const role=(c.role||"");
+  const cls=role.includes("قائد")?"leader":(role.includes("رئيس")?"head":"");
+  const phone=c.phone?`<span class="person-phone">☎ ${esc(c.phone)}</span>`:"";
+  return `<div class="person-card ${cls}"><span class="person-name">${esc(c.rank||"")} ${esc(c.name)}</span>${role?`<span class="person-meta">${esc(role)}</span>`:""}${phone}</div>`;
+}
+function peopleHtmlFor(site,spec,assignments){
+  const ids=Array.isArray(assignments?.[site]?.[spec])?assignments[site][spec]:[];
+  return ids.map(id=>state.crew[id]).filter(Boolean).map(formatPerson).join("")||"—";
+}
+function buildProgramTable(sites,assignments){
+  const cols=['#','المحور',...sites];
+  const rows=SPECS.map((spec,i)=>`<tr><td>${i+1}</td><td class="axis-name">${esc(spec)}</td>${sites.map(site=>`<td>${peopleHtmlFor(site,spec,assignments)}</td>`).join("")}</tr>`).join("");
+  return `<div class="report-legend"><span class="legend-item leader">قائد الفريق: خانة مستقلة</span><span class="legend-item head">رئيس الفريق: يظهر هنا وفي محور التفتيش</span><span class="legend-item">المحور: يمكن أن يضم أكثر من شخص</span></div><table class="ps-program official-program"><thead><tr>${cols.map((h,i)=>`<th class="${i===0?'num-head':i===1?'axis-head':'site-head'}">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+function openDemoReport(){
+  const r=DEMO_ROUND_FULL;
+  const assignments=r.assignments||{};
+  const officerNames=(r.officers||[]).map(i=>state.crew[i]?.name).filter(Boolean);
+  const selectedCrew=r.crew.map((id,i)=>{const c=state.crew[id];return c?`${i+1}. ${c.rank||""} ${c.name}${c.role?" — "+esc(c.role):""}${c.phone?" — "+c.phone:""}`:""}).filter(Boolean).join("، ");
+  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(r.type)} للجولة — نموذج ديمو مطوّر</h2><div class="muted" style="margin-top:6px">جميع الأسماء والبيانات في هذا التقرير افتراضية ولأغراض العرض فقط</div></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(r.date))}</td><th>وقت الحركة</th><td>${esc(r.time)}</td></tr><tr><th>الضباط المعنيون</th><td colspan="3">${officerNames.map(esc).join("، ")}</td></tr></table>${buildProgramTable(r.sites,assignments)}<div class="ps-note"><b>طاقم الجولة المختار:</b> ${esc(selectedCrew)}</div><div class="ps-note"><b>ملاحظات:</b> ${esc(r.notes)}</div><div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
+  window.print();
+}
+
 function printCurrentRound(){
-  let sites=[...document.querySelectorAll('.siteBox:checked')].map(x=>x.value);
-  let crew=[...document.querySelectorAll('.crewBox:checked')].map(x=>state.crew[+x.value]).filter(Boolean);
+  let sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value);
+  let crew=[...document.querySelectorAll(".crewBox:checked")].map(x=>state.crew[+x.value]).filter(Boolean);
   let assignments=readAxisAssignments();
   let officerNames=selectedOfficerNames();
-  let type=document.getElementById('rType').value||'معلن';
-  let date=document.getElementById('rDate').value||'';
-  let time=document.getElementById('rTime').value||'—';
-  let notes=document.getElementById('rNotes').value||'';
-  let siteText=sites.length?sites.join('، '):'—';
-
-  // نموذج الجدول: رقم المحور + المحور/التخصص + المعنيون، مع دمج أسماء المعنيين داخل الخلية.
-  let rows=SPECS.map((spec,i)=>{
-    let ids=Array.isArray(assignments[spec])?assignments[spec]:[];
-    let people=ids.map(id=>state.crew[id]).filter(Boolean);
-    let html=people.length
-      ? `<div class="ps-people">${people.map(c=>`<span class="ps-person"><b>${esc(c.rank||'')}</b> ${esc(c.name)}${c.role==='رئيس فريق'?` — ${esc(c.role)}`:''}</span>`).join('')}</div>`
-      : '<div class="ps-empty">—</div>';
-    return `<tr><td class="no">${i+1}</td><td class="axis">${esc(spec)}</td><td class="people">${html}</td></tr>`;
-  }).join('');
-
-  let selectedCrew=crew.length?crew.map((c,i)=>`${i+1}. ${c.rank||''} ${c.name}${c.role==='رئيس فريق'?' — رئيس فريق':''}`).join('، '):'—';
-
-  document.getElementById('printSheet').innerHTML=`
-    <div class="ps-title">برنامج الزيارات ${esc(type)} / مكتب المفتش العام</div>
-    <div class="ps-subtitle">${esc(arabicDateFull(date))}</div>
-    <table class="ps-info">
-      <tr>
-        <th class="label">الموقع</th><td class="value">${esc(siteText)}</td>
-        <th class="label">وقت الحركة</th><td class="value">${esc(time)}</td>
-      </tr>
-      <tr>
-        <th class="label">الضباط المعنيون</th><td class="value" colspan="3">${officerNames.length?officerNames.map(esc).join('، '):'—'}</td>
-      </tr>
-    </table>
-    <table class="ps-main">
-      <thead><tr><th class="no">#</th><th class="axis">المحور / التخصص</th><th class="people">المعنيون</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div class="ps-note"><b>طاقم الجولة المختار:</b> ${esc(selectedCrew)}</div>
-    ${notes?`<div class="ps-note"><b>ملاحظات:</b> ${esc(notes)}</div>`:''}
-    <div class="ps-footer"><span>رئيس الفريق: __________________________</span><span>التوقيع: __________________________</span></div>`;
+  let type=document.getElementById("rType").value||"معلن";
+  let date=document.getElementById("rDate").value||"";
+  let time=document.getElementById("rTime").value||"—";
+  let notes=document.getElementById("rNotes").value||"";
+  if(!sites.length){alert("يرجى اختيار موقع واحد على الأقل");return;}
+  const selectedCrew=crew.length?crew.map((c,i)=>`${i+1}. ${c.rank||""} ${c.name}${c.role?" — "+esc(c.role):""}${c.phone?" — "+c.phone:""}`).join("، "):"—";
+  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(type)} للجولة — نموذج مطوّر</h2></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(date))}</td><th>وقت الحركة</th><td>${esc(time)}</td></tr><tr><th>الضباط المعنيون</th><td colspan="3">${officerNames.length?officerNames.map(esc).join("، "):"—"}</td></tr></table>${buildProgramTable(sites,assignments)}<div class="ps-note"><b>طاقم الجولة المختار:</b> ${esc(selectedCrew)}</div>${notes?`<div class="ps-note"><b>ملاحظات:</b> ${esc(notes)}</div>`:""}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
   window.print();
 }
 
@@ -425,7 +511,12 @@ function openUser(i=-1){if(!currentUser||!currentUser.p.users)return alert("لا
 function saveUser(){if(!currentUser||!currentUser.p.users)return alert("لا تملك صلاحية إدارة المستخدمين");let u={u:document.getElementById("uName").value.trim(),full:document.getElementById("uFull").value,pass:document.getElementById("uPass").value,job:document.getElementById("uJob").value,role:document.getElementById("uRole").value,p:{}};for(let [id,k] of [["pAdd","add"],["pMulti","multi"],["pCrew","crew"],["pUsers","users"],["pReports","reports"],["pMap","map"]])u.p[k]=document.getElementById(id).checked;if(!u.u||!u.pass)return alert("اسم المستخدم وكلمة المرور مطلوبان");if(editUser<0)state.users.push(u);else state.users[editUser]=u;save();if(currentUser&&currentUser.u===u.u)currentUser=u;closeModal("userModal");renderUsers();applyPermissions()}
 function showSite(s){let rs=state.rounds.filter(r=>(r.sites||[]).includes(s));document.getElementById("siteTitle").textContent="جولات الموقع: "+s;document.getElementById("siteRows").innerHTML=rs.map(r=>`<tr><td>${r.date}</td><td>${r.type}</td><td>${statusOf(r.date)}</td><td>${esc(r.officer||"—")}</td></tr>`).join("")||"<tr><td colspan='4'>لا توجد جولات</td></tr>";openModal("siteModal")}
 function showCity(c){let rs=state.rounds.filter(r=>(r.sites||[]).some(s=>cityOf(s)===c));document.getElementById("siteTitle").textContent="جولات "+c;document.getElementById("siteRows").innerHTML=rs.map(r=>`<tr><td>${r.date}</td><td>${r.type}</td><td>${(r.sites||[]).join("، ")}</td><td>${statusOf(r.date)}</td></tr>`).join("")||"<tr><td colspan='4'>لا توجد جولات</td></tr>";openModal("siteModal")}
-function printCurrentRound(){let sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value),crew=[...document.querySelectorAll(".crewBox:checked")].map(x=>state.crew[+x.value]);document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج جولة ميدانية</h2></div><div class="box"><b>التاريخ:</b> ${document.getElementById("rDate").value}　 <b>النوع:</b> ${document.getElementById("rType").value}　 <b>وقت الحركة:</b> ${document.getElementById("rTime").value||"—"}　 <b>الضابط المعني:</b> ${esc(document.getElementById("rOfficer").value)||"—"}</div><div class="box"><b>المواقع:</b><br>${sites.map((s,i)=>`${i+1}. ${esc(s)}`).join("<br>")}</div><div class="box"><b>طاقم الجولة:</b><table><tr><th>الاسم</th><th>الرتبة</th><th>التخصص</th><th>صفة الطاقم</th></tr>${crew.map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.rank)}</td><td>${esc(c.spec)}</td><td>${esc(c.role)}</td></tr>`).join("")}</table></div><div style="margin-top:35px;display:flex;justify-content:space-between"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;window.print()}
+function normalizeHeader(v){return String(v??"").trim().replace(/\s+/g," ")}
+function excelCell(row,names){for(const n of names){const k=Object.keys(row).find(x=>normalizeHeader(x)===n);if(k!==undefined)return row[k]}return ""}
+function splitExcelList(v){return String(v??"").split(/[|،,;\n]+/).map(x=>x.trim()).filter(Boolean)}
+function openExcelImport(){if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");const i=document.createElement("input");i.type="file";i.accept=".xlsx,.xls,.csv";i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{if(!window.XLSX)return alert("مكتبة Excel لم تُحمّل بعد، حاول مرة أخرى");const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{defval:""});if(!rows.length)return alert("ملف Excel فارغ");let added=0,skipped=0;rows.forEach((row,idx)=>{const date=excelCell(row,["التاريخ","تاريخ الجولة","اليوم والتاريخ","Date"]);const type=excelCell(row,["نوع الجولة","النوع","Type"])||"معلن";const time=excelCell(row,["وقت الحركة","الوقت","Time"]);const sites=splitExcelList(excelCell(row,["الموقع","المواقع","الجهة","Site","Sites"]));const officer=excelCell(row,["الضباط المعنيون","الضابط المعني","المسؤول","Officer"]);const notes=excelCell(row,["ملاحظات","Notes"]);if(!date||!sites.length){skipped++;return}state.rounds.push({id:Date.now().toString()+"-"+idx,date:String(date).slice(0,10),type,time:String(time||""),officer:String(officer||""),officers:[],officerExtra:String(officer||""),notes:String(notes||""),sites,crew:[],assignments:{}});added++});save();renderAll();drawMaps();alert(`تم استيراد ${added} جولة${skipped?`، وتم تجاوز ${skipped} صفوف غير مكتملة`:""}.\\n\\nالآن افتح أي جولة واضغط "تعديل" لاختيار الطاقم وربط كل عضو بالمحور المناسب، ثم اطبع برنامج الجولة.`)}catch(err){console.error(err);alert("تعذر قراءة ملف Excel. تأكد أن الصف الأول يحتوي أسماء الأعمدة.")}};r.readAsArrayBuffer(f)};i.click()}
+function exportRoundsExcel(){if(!state.rounds.length)return alert("لا توجد جولات لتصديرها");if(!window.XLSX)return alert("مكتبة Excel لم تُحمّل بعد، حاول مرة أخرى");const rows=state.rounds.map((r,i)=>({"رقم الجولة":i+1,"التاريخ":r.date,"نوع الجولة":r.type,"وقت الحركة":r.time||"","المواقع":(r.sites||[]).join(" | "),"الضباط المعنيون":r.officer||"","الطاقم":(r.crew||[]).map(id=>state.crew[id]?.name||"").filter(Boolean).join(" | "),"المحاور والمعنيون":Object.entries(r.assignments||{}).map(([sp,ids])=>`${sp}: ${(ids||[]).map(id=>state.crew[id]?.name||"").filter(Boolean).join("، ")}`).join(" | "),"ملاحظات":r.notes||""}));const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=[{wch:12},{wch:14},{wch:18},{wch:12},{wch:45},{wch:35},{wch:40},{wch:90},{wch:45}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"الجولات");XLSX.writeFile(wb,"برنامج_الجولات.xlsx")}
+function downloadExcelTemplate(){if(!window.XLSX)return alert("مكتبة Excel لم تُحمّل بعد، حاول مرة أخرى");const rows=[{"رقم الجولة":1,"التاريخ":today(),"نوع الجولة":"معلن","وقت الحركة":"08:00","المواقع":"مركز أمن إربد الشمالي | قسم سير جنوب عمان","الضباط المعنيون":"","الطاقم":"","المحاور والمعنيون":"","ملاحظات":""}];const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=[{wch:12},{wch:14},{wch:18},{wch:12},{wch:45},{wch:35},{wch:40},{wch:90},{wch:45}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"الجولات");XLSX.writeFile(wb,"نموذج_استيراد_الجولات.xlsx")}
 function printReport(){document.getElementById("printSheet").innerHTML=`<h1>تقرير إحصائيات الجولات المنفذة</h1><div class="box">تاريخ التقرير: ${today()}</div><div class="box"><table><tr><th>المؤشر</th><th>القيمة</th></tr><tr><td>إجمالي الجولات المنفذة</td><td>${document.getElementById("rDone").textContent}</td></tr><tr><td>معلن</td><td>${document.getElementById("rAnn").textContent}</td></tr><tr><td>مفاجئ / متابعة</td><td>${document.getElementById("rSur").textContent}</td></tr><tr><td>متخصص</td><td>${document.getElementById("rSpec").textContent}</td></tr><tr><td>المواقع</td><td>${document.getElementById("rSites").textContent}</td></tr></table></div>`;window.print()}
 function exportBackup(){let a=document.createElement("a");a.href="data:application/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(state,null,2));a.download="jawalat-backup.json";a.click()}
 function importBackup(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=()=>{let r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();renderAll();drawMaps();alert("تم الاستيراد")}catch(e){alert("ملف غير صالح")}};r.readAsText(i.files[0])};i.click()}
