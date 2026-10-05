@@ -226,6 +226,30 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   #printSheet .person-card.head{background:#f4f1e8!important}
   #printSheet .ps-footer{display:none!important}
 }
+
+/* FINAL MOBILE PRINT PATCH — force compact single-page report */
+@media print{
+  @page{size:A4 landscape !important; margin:0 !important;}
+  html,body{width:100%!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important;}
+  body>*{display:none!important;}
+  #printSheet.print-sheet{display:block!important;position:relative!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:3mm!important;box-sizing:border-box!important;overflow:visible!important;page-break-after:avoid!important;break-after:avoid-page!important;}
+  #printSheet .ps-head{height:15mm!important;margin:0 0 1mm!important;padding:1.8mm 3mm!important;box-sizing:border-box!important;}
+  #printSheet .ps-head h1{font-size:12pt!important;margin:0!important;}
+  #printSheet .ps-head h2{font-size:7.2pt!important;margin:.4mm 0!important;}
+  #printSheet .ps-head .muted{display:none!important;}
+  #printSheet .ps-info{height:7mm!important;margin:0 0 1mm!important;font-size:6.5pt!important;}
+  #printSheet .ps-info th,#printSheet .ps-info td{padding:.45mm .8mm!important;font-size:6.5pt!important;}
+  #printSheet .ps-program{width:100%!important;height:auto!important;margin:0!important;font-size:6.4pt!important;table-layout:fixed!important;page-break-inside:avoid!important;break-inside:avoid-page!important;}
+  #printSheet .ps-program tr{height:auto!important;min-height:0!important;page-break-inside:avoid!important;break-inside:avoid!important;}
+  #printSheet .ps-program th,#printSheet .ps-program td{padding:.45mm .7mm!important;line-height:1!important;border:1px solid #111!important;}
+  #printSheet .ps-program th{height:5.5mm!important;font-size:6.5pt!important;}
+  #printSheet .ps-program td.axis-name{width:31mm!important;font-size:6.4pt!important;}
+  #printSheet .ps-program .num-head,#printSheet .ps-program td:first-child{width:5mm!important;}
+  #printSheet .person-card{padding:0!important;margin:0!important;line-height:1!important;white-space:nowrap!important;overflow:visible!important;}
+  #printSheet .person-card .person-name{font-size:6.3pt!important;font-weight:900!important;}
+  #printSheet .person-card .person-phone{font-size:5.9pt!important;font-weight:900!important;margin-right:1.2mm!important;}
+}
+
 </style>
 </head>
 <body>
@@ -413,7 +437,7 @@ const DEMO_CREW=[
 ];
 const DEMO_ASSIGNMENTS_BY_SITE={
 "مركز أمن إربد الشمالي":{
-"قائد الفريق":[0],"رئيس الفريق":[14],"رئيس الفريق":[14],"المظهر العام":[1],"ديوان وقوى بشرية":[2,3],"التدريب والتخطيط والعمليات":[3],"اتصالات":[4,5,14],"العهدة":[5],"أبنية":[6,7],"زيوت ومحروقات":[7],"قضائية":[8],"مواد خطرة + مسرح الجريمة":[9],"إنقاذ + إطفاء + إسعاف":[10,11],"الفني الانضباطي / آليات":[11,12],"الفني الانضباطي / أسلحة":[12,13],"شعبة الرقابة المالية":[13]},
+"قائد الفريق":[0],"رئيس الفريق":[14],"المظهر العام":[1],"ديوان وقوى بشرية":[2,3],"التدريب والتخطيط والعمليات":[3],"اتصالات":[4,5,14],"العهدة":[5],"أبنية":[6,7],"زيوت ومحروقات":[7],"قضائية":[8],"مواد خطرة + مسرح الجريمة":[9],"إنقاذ + إطفاء + إسعاف":[10,11],"الفني الانضباطي / آليات":[11,12],"الفني الانضباطي / أسلحة":[12,13],"شعبة الرقابة المالية":[13]},
 "مفرزة بحث جنائي إربد الشمالي":{
 "قائد الفريق":[0],"رئيس الفريق":[14],"المظهر العام":[1,2],"ديوان وقوى بشرية":[2],"التدريب والتخطيط والعمليات":[3,4],"اتصالات":[4,14],"العهدة":[5,6],"أبنية":[6],"زيوت ومحروقات":[7,8],"قضائية":[8,9],"مواد خطرة + مسرح الجريمة":[9],"إنقاذ + إطفاء + إسعاف":[10],"الفني الانضباطي / آليات":[11],"الفني الانضباطي / أسلحة":[12],"شعبة الرقابة المالية":[13]},
 "مركز دفاع مدني إربد":{
