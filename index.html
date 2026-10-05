@@ -417,7 +417,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   #printSheet .person-card { display:block !important; border:0 !important; border-bottom:1px dotted #9aa7b0 !important; border-radius:0 !important; padding:1mm 0 !important; margin:0 !important; background:transparent !important; line-height:1.12 !important; text-align:right !important; }
   #printSheet .person-card:last-child { border-bottom:0 !important; }
   #printSheet .person-card .person-name { display:inline !important; font-size:8.2pt !important; font-weight:900 !important; }
-  #printSheet .person-card .person-phone { display:inline !important; margin-right:3mm !important; font-size:7.2pt !important; font-weight:700 !important; direction:ltr !important; unicode-bidi:embed !important; }
+  #printSheet .person-card .person-phone { display:inline !important; margin-right:3mm !important; font-size:7pt !important; font-weight:700 !important; direction:ltr !important; unicode-bidi:isolate !important; }
   #printSheet .person-card.leader { border:0 !important; background:transparent !important; }
   #printSheet .person-card.head { border:0 !important; background:transparent !important; }
   #printSheet .ps-footer { display:flex !important; height:5mm !important; margin-top:1mm !important; padding:0 3mm !important; align-items:center !important; justify-content:space-between !important; font-size:8.5pt !important; font-weight:800 !important; border-top:1px solid #7b8790 !important; }
@@ -446,7 +446,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   #printSheet .site-label { font-size:6.6pt !important; margin-bottom:1px !important; }
   #printSheet .person-card { border:0 !important; margin:0 !important; padding:0 !important; line-height:1.05 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:clip !important; }
   #printSheet .person-card .person-name { display:inline !important; font-size:7.2pt !important; font-weight:900 !important; }
-  #printSheet .person-card .person-phone { display:inline !important; font-size:6.5pt !important; margin-right:3px !important; white-space:nowrap !important; }
+  #printSheet .person-card .person-phone { display:inline !important; font-size:6.5pt !important; margin-right:2px !important; white-space:nowrap !important; }
   #printSheet .person-card.leader, #printSheet .person-card.head { background:transparent !important; }
   #printSheet .ps-footer, #printSheet .report-legend, #printSheet .ps-note { display:none !important; }
 }
@@ -463,6 +463,10 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   #printSheet .ps-footer{display:none !important;}
 } 
 </style>
+</style>
+<style id="v14-phone-inline-final">
+.person-card .person-phone{display:inline !important;margin-right:3px !important;font-weight:700 !important;direction:ltr !important;unicode-bidi:isolate !important;white-space:nowrap !important;}
+#printSheet .person-card .person-phone{display:inline !important;margin-right:2px !important;font-weight:700 !important;direction:ltr !important;unicode-bidi:isolate !important;white-space:nowrap !important;}
 </style>
 </head>
 <body>
@@ -896,7 +900,7 @@ function formatPerson(c){
   if(!c)return "";
   const role=(c.role||"");
   const cls=role.includes("قائد")?"leader":(role.includes("رئيس")?"head":"");
-  const phone=c.phone?`<span class="person-phone">📞 ${esc(c.phone)}</span>`:"";
+  const phone=c.phone?`<span class="person-phone">(${esc(c.phone)})</span>`:"";
   return `<div class="person-card ${cls}"><span class="person-name">${esc(c.rank||"")} ${esc(c.name)}</span>${phone}</div>`;
 }
 function peopleIdsFor(site,spec,assignments){
