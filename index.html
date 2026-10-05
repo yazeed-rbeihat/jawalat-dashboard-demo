@@ -423,6 +423,34 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   #printSheet .ps-footer { display:flex !important; height:5mm !important; margin-top:1mm !important; padding:0 3mm !important; align-items:center !important; justify-content:space-between !important; font-size:8.5pt !important; font-weight:800 !important; border-top:1px solid #7b8790 !important; }
 }
 </style>
+
+<style id="v8-final-print">
+@media print {
+  @page { size: 11in 8.5in; margin: 0.18in; }
+  html, body { width: 11in !important; height: 8.5in !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+  body > * { display: none !important; }
+  #printSheet.print-sheet { display:block !important; width:10.64in !important; height:8.14in !important; max-width:none !important; max-height:none !important; min-height:0 !important; margin:0 !important; padding:0 !important; overflow:hidden !important; box-sizing:border-box !important; direction:rtl !important; }
+  #printSheet .ps-head { height:0.62in !important; margin:0 0 0.04in !important; padding:0.05in 0.12in !important; box-sizing:border-box !important; border:1.5px solid #182b3a !important; }
+  #printSheet .ps-head h1 { font-size:15pt !important; margin:0 0 2px !important; line-height:1.05 !important; }
+  #printSheet .ps-head h2 { font-size:8.5pt !important; margin:1px 0 !important; line-height:1.05 !important; }
+  #printSheet .ps-info { height:0.34in !important; margin:0 0 0.04in !important; font-size:8pt !important; }
+  #printSheet .ps-info th, #printSheet .ps-info td { padding:2px 4px !important; line-height:1 !important; }
+  #printSheet .ps-program { width:100% !important; height:6.95in !important; margin:0 !important; table-layout:fixed !important; border:1.5px solid #182b3a !important; border-collapse:collapse !important; font-size:7.4pt !important; page-break-inside:avoid !important; break-inside:avoid !important; }
+  #printSheet .ps-program thead { display:table-header-group !important; }
+  #printSheet .ps-program tr { height:0.39in !important; page-break-inside:avoid !important; break-inside:avoid !important; }
+  #printSheet .ps-program th { height:0.42in !important; padding:3px 4px !important; font-size:7.8pt !important; line-height:1.05 !important; }
+  #printSheet .ps-program td { height:0.39in !important; padding:2px 4px !important; font-size:7.2pt !important; line-height:1.05 !important; vertical-align:middle !important; overflow:hidden !important; }
+  #printSheet .ps-program .num-head, #printSheet .ps-program td.row-no, #printSheet .ps-program td:first-child { width:0.30in !important; }
+  #printSheet .ps-program .axis-head, #printSheet .ps-program td.axis-name { width:1.55in !important; font-size:7.2pt !important; }
+  #printSheet .site-name { font-size:7.8pt !important; line-height:1.02 !important; }
+  #printSheet .site-label { font-size:6.6pt !important; margin-bottom:1px !important; }
+  #printSheet .person-card { border:0 !important; margin:0 !important; padding:0 !important; line-height:1.05 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:clip !important; }
+  #printSheet .person-card .person-name { display:inline !important; font-size:7.2pt !important; font-weight:900 !important; }
+  #printSheet .person-card .person-phone { display:inline !important; font-size:6.5pt !important; margin-right:3px !important; white-space:nowrap !important; }
+  #printSheet .person-card.leader, #printSheet .person-card.head { background:transparent !important; }
+  #printSheet .ps-footer, #printSheet .report-legend, #printSheet .ps-note { display:none !important; }
+}
+</style>
 </head>
 <body>
 
