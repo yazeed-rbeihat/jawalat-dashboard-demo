@@ -915,11 +915,50 @@ function buildProgramTable(sites,assignments){
   return `<table class="program-table ps-program"><colgroup>${widths}</colgroup><thead><tr><th class="num-head">م</th><th class="axis-head">المحور</th>${siteCols.map(c=>`<th class="site-head"><span class="site-label">الموقع</span><span class="site-name">${esc(c)}</span></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 async function generateDirectPdf(reportHtml){
-  /* على الهاتف، حفظ ملف PDF مباشرة عبر Blob/Canvas قد لا يفتح مدير التنزيل.
-     لذلك نستخدم معاينة الطباعة الأصلية، ومنها يمكن اختيار "حفظ كـ PDF". */
-  printCleanDocument(reportHtml);
+  /* إنشاء PDF أفقي حقيقي مباشرةً، بدون الاعتماد على محرك الطباعة في Android.
+     يتم رسم التقرير داخل SVG/Canvas ثم تغليفه في PDF بقياس A4 أفقي. */
+  try{
+    const W=1600,H=1100;
+    const css=`
+      *{box-sizing:border-box}
+      html,body{margin:0;padding:0;width:1600px;height:1100px;background:#fff;color:#14202b;font-family:Tahoma,Arial,sans-serif;direction:rtl}
+      .pdf-sheet{width:1600px;height:1100px;padding:34px 42px;background:#fff;overflow:hidden}
+      .ps-head{height:118px;margin:0 0 10px;padding:12px 24px;border:2px solid #18364a;border-radius:12px;background:linear-gradient(90deg,#edf4f8,#fff,#edf4f8);text-align:center}
+      .ps-head h1{margin:0 0 8px;font-size:30px;line-height:1.05;font-weight:900}
+      .ps-head h2{margin:4px 0;font-size:18px;line-height:1.08;font-weight:800}
+      .ps-info{width:100%;height:58px;margin:0 0 10px;border:2px solid #18364a;border-collapse:collapse;table-layout:fixed;font-size:16px}
+      .ps-info th,.ps-info td{border:1px solid #536674;padding:5px;text-align:center;vertical-align:middle;line-height:1.05}
+      .ps-info th{background:#e5eef3;font-weight:900;width:12%}.ps-info td{font-weight:800;width:21%}
+      .ps-program{width:100%;height:820px;margin:0;border:2px solid #18364a;border-collapse:collapse;table-layout:fixed;font-size:13px}
+      .ps-program th,.ps-program td{border:1px solid #4d5e69;padding:5px 7px;vertical-align:middle;line-height:1.08;overflow:hidden}
+      .ps-program th{height:58px;background:#dce8ee;font-size:15px;font-weight:900;text-align:center}
+      .ps-program tr{height:50px}.ps-program .num-head,.ps-program td.row-no,.ps-program td:first-child{width:48px;text-align:center;font-weight:900}
+      .ps-program .axis-head,.ps-program td.axis-name{width:205px;background:#eef3f6;font-size:14px;font-weight:900;text-align:right}
+      .site-label{display:block;font-size:11px;font-weight:700;color:#61717d;margin-bottom:3px}.site-name{display:block;font-size:14px;line-height:1.08;font-weight:900}
+      .ps-program td:not(.axis-name):not(.row-no){text-align:right;background:#fff}.ps-program tbody tr:nth-child(even) td:not(.axis-name){background:#f8fafb}
+      .person-card{display:block;border-bottom:1px dotted #9aa7b0;padding:3px 0;margin:0;background:transparent;line-height:1.1;text-align:right;white-space:nowrap;overflow:hidden}
+      .person-card:last-child{border-bottom:0}.person-name{display:inline;font-size:13px;font-weight:900}.person-phone{display:inline;margin-right:8px;font-size:11px;font-weight:700;direction:ltr;unicode-bidi:embed}.person-card.leader{font-weight:900}.person-card.head{font-weight:900}
+    `;
+    const html=`<div xmlns="http://www.w3.org/1999/xhtml" class="pdf-sheet"><style>${css}</style>${reportHtml}</div>`;
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><foreignObject x="0" y="0" width="${W}" height="${H}">${html}</foreignObject></svg>`;
+    const data='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+        const ctx=canvas.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.drawImage(img,0,0,W,H);
+        const jpeg=canvas.toDataURL('image/jpeg',0.94).split(',')[1];
+        const pdf=jpegToPdf(jpeg,W,H);
+        const blob=new Blob([pdf],{type:'application/pdf'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download='برنامج_الجولة_أفقي.pdf'; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),15000);
+      }catch(e){console.error(e); alert('تعذر إنشاء ملف PDF مباشرة. سيتم فتح الطباعة كخيار احتياطي.'); printCleanDocument(reportHtml);}
+    };
+    img.onerror=()=>{alert('تعذر تجهيز التقرير كملف PDF. سيتم فتح الطباعة كخيار احتياطي.');printCleanDocument(reportHtml)};
+    img.src=data;
+  }catch(e){console.error(e);alert('حدث خطأ أثناء تجهيز PDF: '+(e?.message||e));printCleanDocument(reportHtml)}
 }
-
 function jpegToPdf(base64,w,h){
   const bin=atob(base64);
   const imgBytes=new Uint8Array(bin.length);
@@ -1011,7 +1050,7 @@ function openDemoReport(){
   const r=DEMO_ROUND_FULL;
   const assignments=r.assignments||{};
   document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(r.type)} للجولة — نموذج ديمو مطوّر</h2><div class="muted" style="margin-top:6px">جميع الأسماء والبيانات في هذا التقرير افتراضية ولأغراض العرض فقط</div></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(r.date))}</td><th>وقت الحركة</th><td>${esc(r.time)}</td><th>نوع الجولة</th><td>${esc(r.type)}</td></tr></table>${buildProgramTable(r.sites,assignments)}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
-  printCleanDocument(document.getElementById("printSheet").innerHTML);
+  generateDirectPdf(document.getElementById("printSheet").innerHTML);
 }
 
 function printCurrentRound(){
@@ -1026,7 +1065,7 @@ function printCurrentRound(){
   const hasAssignments=Object.values(assignments||{}).some(site=>Object.values(site||{}).some(ids=>Array.isArray(ids)&&ids.length));
   if(!hasAssignments && sites.length===DEMO_ROUND_FULL.sites.length && sites.every((x,i)=>x===DEMO_ROUND_FULL.sites[i])) assignments=DEMO_ASSIGNMENTS_BY_SITE;
   document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(type)} للجولة</h2></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(date))}</td><th>وقت الحركة</th><td>${esc(time)}</td><th>نوع الجولة</th><td>${esc(type)}</td></tr></table>${buildProgramTable(sites,assignments)}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
-  printCleanDocument(document.getElementById("printSheet").innerHTML);
+  generateDirectPdf(document.getElementById("printSheet").innerHTML);
 }
 
 function openCrew(i=-1){editCrew=i;document.getElementById("cName").value=i<0?"":state.crew[i].name;document.getElementById("cRank").value=i<0?"":state.crew[i].rank;document.getElementById("cPhone").value=i<0?"":state.crew[i].phone||"";document.getElementById("cNotes").value=i<0?"":state.crew[i].notes||"";document.getElementById("cRole").value=i<0?"عضو":state.crew[i].role;document.getElementById("cSpec").innerHTML=SPECS.map(s=>`<option>${esc(s)}</option>`).join("");if(i>=0)document.getElementById("cSpec").value=state.crew[i].spec;openModal("crewModal")}
