@@ -535,7 +535,9 @@ function normalizeAssignments(assignments={},sites=[]){
 }
 function renderAxisAssignments(assignments={}){
   const box=document.getElementById("axisAssignments");
+  const blank=document.getElementById("blankSiteBox");
   const sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value);
+  if(blank && blank.checked) sites.push("");
   if(!sites.length){box.innerHTML='<div class="muted">اختر المواقع أولاً، ثم وزّع أكثر من شخص على كل محور عند الحاجة.</div>';return;}
   const norm=normalizeAssignments(assignments,sites);
   box.innerHTML=sites.map((site,si)=>{
@@ -557,30 +559,104 @@ function readAxisAssignments(){
   return out;
 }
 function bindSiteAssignmentRefresh(existing={}){
-  document.querySelectorAll(".siteBox").forEach(cb=>cb.addEventListener("change",()=>{
+  const blank=document.getElementById("blankSiteBox");
+  const boxes=[...document.querySelectorAll(".siteBox")];
+  function syncBlank(){
+    if(!blank)return;
+    const any=boxes.some(x=>x.checked);
+    if(any){blank.checked=false; blank.disabled=true;}
+    else {blank.disabled=false;}
+  }
+  boxes.forEach(cb=>cb.addEventListener("change",()=>{
     const current=readAxisAssignments();
+    syncBlank();
     renderAxisAssignments(Object.keys(current).length?current:existing);
   }));
+  if(blank) blank.addEventListener("change",()=>{
+    if(blank.checked){boxes.forEach(x=>{x.checked=false;x.disabled=true});}
+    else boxes.forEach(x=>x.disabled=false);
+    renderAxisAssignments({});
+  });
+  syncBlank();
 }
 function selectedOfficerNames(){let names=[...document.querySelectorAll(".officerBox:checked")].map(x=>state.crew[+x.value]?.name).filter(Boolean);let extra=(document.getElementById("rOfficerExtra")?.value||"").split(/[,،\n]+/).map(x=>x.trim()).filter(Boolean);return [...names,...extra]}
-function addRound(){editRoundId=-1;if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");document.getElementById("rDate").value=today();document.getElementById("rType").value="معلن";document.getElementById("rTime").value="";document.getElementById("rOfficerExtra").value="";document.getElementById("rNotes").value="";document.getElementById("roundTitle").textContent="إضافة جولة / برنامج زيارة";document.getElementById("sitePick").innerHTML=SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}"> ${esc(s)}</label>`).join("");document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}"> ${esc(c.name)} — ${esc(c.spec)}${c.role?" — "+esc(c.role):""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";renderOfficerPick([]);renderAxisAssignments({});bindSiteAssignmentRefresh({});openModal("roundModal")}
+function addRound(){editRoundId=-1;if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");document.getElementById("rDate").value=today();document.getElementById("rType").value="معلن";document.getElementById("rTime").value="";document.getElementById("rOfficerExtra").value="";document.getElementById("rNotes").value="";document.getElementById("roundTitle").textContent="إضافة جولة / برنامج زيارة";document.getElementById("sitePick").innerHTML=`<label style="display:block;margin-bottom:10px;padding:8px;border:1px dashed #94a3b8;border-radius:8px;background:#f8fafc"><input type="checkbox" id="blankSiteBox" value="__BLANK__"> <b>بدون موقع لهذه الجولة — يترك الموقع فارغاً في البرنامج</b></label>`+SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}"> ${esc(s)}</label>`).join("");document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}"> ${esc(c.name)} — ${esc(c.spec)}${c.role?" — "+esc(c.role):""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";renderOfficerPick([]);renderAxisAssignments({});bindSiteAssignmentRefresh({});openModal("roundModal")}
 function saveRound(){
-  let sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value);
-  if(!sites.length)return alert("اختر موقعاً واحداً على الأقل");
-  if(sites.length>1&&!currentUser.p.multi)return alert("المستخدم الحالي لا يملك صلاحية اختيار أكثر من موقع");
-  let crew=[...document.querySelectorAll(".crewBox:checked")].map(x=>+x.value);
-  let officers=[...document.querySelectorAll(".officerBox:checked")].map(x=>+x.value);
-  let officerNames=selectedOfficerNames();
-  let data={date:document.getElementById("rDate").value,type:document.getElementById("rType").value,time:document.getElementById("rTime").value,officer:officerNames.join("، "),officers,officerExtra:document.getElementById("rOfficerExtra").value,notes:document.getElementById("rNotes").value,sites,crew,assignments:readAxisAssignments()};
-  if(editRoundId && editRoundId!==-1){let idx=state.rounds.findIndex(x=>x.id===editRoundId);if(idx>=0)state.rounds[idx]={...state.rounds[idx],...data};}
-  else state.rounds.push({id:Date.now().toString(),...data});
-  editRoundId=-1;save();closeModal("roundModal");renderAll();drawMaps()
+  try{
+    if(!currentUser || !currentUser.p || !currentUser.p.add){
+      alert("لا تملك صلاحية إضافة أو تعديل الجولات");
+      return false;
+    }
+
+    const blank=document.getElementById("blankSiteBox");
+    let sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value).filter(Boolean);
+
+    /* السماح بجولة بدون موقع: تحفظ كموقع فارغ ليظهر عمود الموقع فارغاً في البرنامج */
+    if(blank && blank.checked) sites=[""];
+    if(!sites.length) sites=[""];
+
+    if(sites.filter(Boolean).length>1 && !currentUser.p.multi){
+      alert("المستخدم الحالي لا يملك صلاحية اختيار أكثر من موقع");
+      return false;
+    }
+
+    const crew=[...document.querySelectorAll(".crewBox:checked")].map(x=>+x.value);
+    const officers=[...document.querySelectorAll(".officerBox:checked")].map(x=>+x.value);
+    const officerNames=selectedOfficerNames();
+
+    const data={
+      date:document.getElementById("rDate").value,
+      type:document.getElementById("rType").value,
+      time:document.getElementById("rTime").value,
+      officer:officerNames.join("، "),
+      officers,
+      officerExtra:document.getElementById("rOfficerExtra").value,
+      notes:document.getElementById("rNotes").value,
+      sites,
+      crew,
+      assignments:readAxisAssignments()
+    };
+
+    if(!data.date){
+      alert("يرجى إدخال تاريخ الجولة");
+      return false;
+    }
+
+    if(editRoundId !== -1 && editRoundId !== null && editRoundId !== undefined){
+      const idx=state.rounds.findIndex(x=>String(x.id)===String(editRoundId));
+      if(idx<0){
+        alert("تعذر العثور على الجولة المراد تعديلها");
+        return false;
+      }
+      state.rounds[idx]={...state.rounds[idx],...data};
+    }else{
+      state.rounds.push({id:"R-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),...data});
+    }
+
+    try{
+      save();
+    }catch(storageErr){
+      console.error(storageErr);
+      alert("تم إنشاء الجولة في الذاكرة، لكن تعذر حفظها في تخزين المتصفح. قد يكون التخزين ممتلئاً.");
+    }
+
+    editRoundId=-1;
+    closeModal("roundModal");
+    renderAll();
+    drawMaps();
+    alert("تم حفظ الجولة بنجاح");
+    return true;
+  }catch(err){
+    console.error("saveRound error:",err);
+    alert("حدث خطأ أثناء إنشاء الجولة: "+(err?.message||err));
+    return false;
+  }
 }
 function editRound(id){
   if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية تعديل الجولات");
   let r=state.rounds.find(x=>x.id===id);if(!r)return;
   editRoundId=id;document.getElementById("rDate").value=r.date;document.getElementById("rType").value=r.type;document.getElementById("rTime").value=r.time||"";document.getElementById("rOfficerExtra").value=r.officerExtra||"";document.getElementById("rNotes").value=r.notes||"";document.getElementById("roundTitle").textContent="تعديل برنامج الجولة";
-  document.getElementById("sitePick").innerHTML=SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}" ${(r.sites||[]).includes(s)?"checked":""}> ${esc(s)}</label>`).join("");
+  document.getElementById("sitePick").innerHTML=`<label style="display:block;margin-bottom:8px"><input type="checkbox" id="blankSiteBox" value="__BLANK__" ${!(r.sites||[]).filter(Boolean).length?"checked":""}> <b>بدون موقع لهذه الجولة — يترك الموقع فارغاً في البرنامج</b></label>`+SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}" ${(r.sites||[]).includes(s)?"checked":""}> ${esc(s)}</label>`).join("");
   document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}" ${(r.crew||[]).includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.spec)}${c.role?" — "+esc(c.role):""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";
   let selectedOfficers=Array.isArray(r.officers)?r.officers:[];if(!selectedOfficers.length&&r.officer){let parts=r.officer.split(/،|,/).map(x=>x.trim());selectedOfficers=state.crew.map((c,i)=>parts.includes(c.name)?i:-1).filter(i=>i>=0)}renderOfficerPick(selectedOfficers);renderAxisAssignments(r.assignments||{});bindSiteAssignmentRefresh(r.assignments||{});openModal("roundModal")
 }
@@ -620,9 +696,10 @@ function buildMergedSiteCells(sites,spec,assignments){
   return html;
 }
 function buildProgramTable(sites,assignments){
+  sites=(sites&&sites.length)?sites:[""];
   const cols=['#','المحور',...sites];
   const rows=SPECS.map((spec,i)=>`<tr><td class="row-no">${i+1}</td><td class="axis-name">${esc(spec)}</td>${buildMergedSiteCells(sites,spec,assignments)}</tr>`).join("");
-  return `<table class="ps-program official-program"><thead><tr>${cols.map((h,i)=>`<th class="${i===0?'num-head':i===1?'axis-head':'site-head'}">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="program-table"><thead><tr>${cols.map((c,i)=>`<th class="${i<2?"fixed":""}">${esc(c||"")}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 async function generateDirectPdf(reportHtml){
   try{
