@@ -25,6 +25,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .site-pick{border:1px solid #dbe3eb;border-radius:12px;padding:10px;max-height:220px;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}.site-pick label,.crew-pick label{background:#f7fafc;padding:9px;border-radius:9px;border:1px solid transparent}.site-pick label:hover,.crew-pick label:hover{border-color:#9fc5e1}
 .crew-pick{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:220px;overflow:auto;border:1px solid #dbe3eb;padding:10px;border-radius:12px}
 .user-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.user-card{border:1px solid #dbe3eb;border-radius:12px;padding:12px;background:#fafcfe}
+.axis-assignments{display:flex;flex-direction:column;gap:8px;border:1px solid #dbe3eb;border-radius:12px;padding:10px;background:#fbfdff}.axis-row{display:grid;grid-template-columns:220px 1fr;gap:10px;align-items:start;border-bottom:1px solid #e7edf2;padding:8px 0}.axis-row:last-child{border-bottom:0}.axis-row b{padding-top:9px}.axis-row select{width:100%;min-height:82px;border:1px solid #cbd7e1;border-radius:9px;padding:7px;background:#fff}.axis-row small{display:block;color:#718293;margin-top:4px}@media(max-width:800px){.axis-row{grid-template-columns:1fr;gap:5px}.axis-row select{min-height:96px}}
 .print-sheet{display:none}
 .footer{text-align:center;padding:25px;color:#718293;font-size:12px}
 @media(max-width:1100px){.cards{grid-template-columns:repeat(3,1fr)}.user-grid{grid-template-columns:1fr 1fr}}
@@ -81,6 +82,41 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 
 .login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#062b4b,#0c5c89);display:flex;align-items:center;justify-content:center;padding:18px;z-index:9999}.login-card{width:min(430px,100%);background:#fff;border-radius:22px;padding:28px;box-shadow:0 20px 60px #0005;text-align:center}.login-logo{width:105px;height:105px;object-fit:cover;border-radius:50%;margin:0 auto 12px;display:block}.login-card h1{margin:4px 0;font-size:22px;color:#17324d}.login-card h2{margin:5px 0 18px;font-size:15px;color:#5f7385}.login-card label{display:block;text-align:right;font-size:13px;color:#63778a;margin:10px 0}.login-card input{width:100%;margin-top:5px;border:1px solid #cbd7e1;border-radius:10px;padding:12px;background:#fff}.login-btn{width:100%;margin-top:12px;background:#1976d2;color:#fff;border:0;border-radius:11px;padding:12px;font-weight:800}.login-error{color:#c83e3e;min-height:20px;margin-top:9px;font-size:12px}.session-bar{margin-right:auto;display:flex;align-items:center;gap:8px;font-size:12px}.logout-btn{border:1px solid #ffffff55;background:#ffffff18;color:#fff;border-radius:9px;padding:7px 10px}.hidden{display:none!important}
 @media(max-width:500px){.login-card{padding:22px}.login-logo{width:90px;height:90px}}
+
+/* === برنامج الجولة: نموذج طباعة رسمي قريب من النموذج المرفق === */
+.print-sheet{display:none}
+@media print{
+  @page{size:A4 landscape;margin:8mm}
+  body>*{display:none!important}
+  .print-sheet{display:block!important;direction:rtl;color:#111;background:#fff;font-family:"Tahoma","Arial",sans-serif;font-size:11pt}
+  .ps-title{border:2px solid #111;text-align:center;font-weight:800;padding:7px 10px;margin-bottom:0;font-size:17px;line-height:1.45}
+  .ps-subtitle{text-align:center;border-left:2px solid #111;border-right:2px solid #111;border-bottom:2px solid #111;padding:5px;font-size:12px;font-weight:700}
+  .ps-info{width:100%;border-collapse:collapse;table-layout:fixed;margin:0}
+  .ps-info th,.ps-info td{border:1.5px solid #111;padding:6px 7px;vertical-align:middle;text-align:center}
+  .ps-info th{font-weight:800;background:#f4f4f4}
+  .ps-info .label{width:12%}
+  .ps-info .value{text-align:right;font-weight:700}
+  .ps-main{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:0}
+  .ps-main th,.ps-main td{border:1.5px solid #111;padding:5px 6px;vertical-align:middle}
+  .ps-main th{font-weight:800;text-align:center;background:#eee}
+  .ps-main .no{width:5%;text-align:center}
+  .ps-main .axis{width:28%;font-weight:700}
+  .ps-main .people{width:67%;text-align:right;line-height:1.65}
+  .ps-people{display:flex;flex-wrap:wrap;gap:0;border:0}
+  .ps-person{display:inline-block;min-width:32%;padding:2px 8px;border-left:1px solid #777}
+  .ps-person:last-child{border-left:0}
+  .ps-empty{text-align:center;color:#444}
+  .ps-footer{margin-top:20px;display:flex;justify-content:space-between;font-weight:700}
+  .ps-note{margin-top:10px;border:1px solid #111;padding:6px;line-height:1.6}
+}
+
+
+.axis-assignments{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.axis-row{display:grid;grid-template-columns:minmax(210px,0.9fr) minmax(260px,1.6fr);gap:10px;align-items:center;border:1px solid #dbe3eb;border-radius:12px;padding:9px;background:#fbfdff}
+.axis-row b{display:block;line-height:1.5}.axis-row small{display:block;color:#718293;margin-top:2px;font-size:11px}
+.axis-row .axisBox{width:100%;min-height:92px;border:1px solid #cbd7e1;border-radius:9px;padding:5px;background:#fff}
+@media(max-width:700px){.axis-row{grid-template-columns:1fr}.axis-row .axisBox{min-height:120px}}
+
 </style>
 </head>
 <body>
@@ -210,9 +246,11 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 <label>التاريخ<input id="rDate" type="date"></label>
 <label>نوع الجولة<select id="rType"><option>معلن</option><option>مفاجئ / متابعة</option><option>متخصص</option></select></label>
 <label>وقت الحركة<input id="rTime" type="time"></label>
-<label>الضابط المعني<input id="rOfficer"></label>
+<label class="full"><b>الضباط المعنيون</b><div class="muted">يمكن اختيار أكثر من ضابط/عضو بدل إضافة ضابط واحد فقط.</div><div class="crew-pick" id="officerPick"></div></label>
+<label class="full">معنيون إضافيون<textarea id="rOfficerExtra" rows="2" placeholder="أسماء إضافية غير موجودة في طاقم الجولة، افصل بين الأسماء بفاصلة"></textarea></label>
 <label class="full">ملاحظات<textarea id="rNotes" rows="2"></textarea></label>
-<div class="full"><b>المواقع — يسمح باختيار أكثر من موقع</b><div class="muted">صلاحية المستخدم تحدد إمكانية اختيار عدة مواقع.</div><div class="site-pick" id="sitePick"></div></div>
+<div class="full"><b>المواقع — يسمح باختيار أكثر من موقع</b><div class="muted">يمكن اختيار أكثر من موقع للجولة حسب الصلاحية.</div><div class="site-pick" id="sitePick"></div></div>
+<div class="full"><b>المحاور والمعنيون</b><div class="muted">لكل محور يمكن اختيار أكثر من معني. سيظهر الناتج في جدول البرنامج عند الطباعة بنفس ترتيب نموذج المرفق.</div><div id="axisAssignments" class="axis-assignments"></div></div>
 <div class="full"><b>طاقم الجولة</b><div class="crew-pick" id="crewPick"></div></div>
 </div></div>
 <div class="dialog-actions"><button class="action success" onclick="saveRound()">حفظ الجولة</button><button class="action secondary" onclick="printCurrentRound()">طباعة / حفظ PDF</button><button class="action secondary" onclick="closeModal('roundModal')">إلغاء</button></div>
@@ -302,13 +340,20 @@ function drawBars(id,obj){let el=document.getElementById(id),e=Object.entries(ob
 function cityOf(s){for(let c of Object.keys(CITIES))if(s.includes(c))return c; if(s.includes("إربد"))return "اربد";if(s.includes("مادبا"))return "مادبا";if(s.includes("عمان"))return "عمان";if(s.includes("الزرقاء"))return "الزرقاء";return "غير محدد"}
 function initMaps(){if(!window.L)return;map1=L.map("map").setView([31.2,36.1],7);map2=L.map("map2").setView([31.2,36.1],7);[map1,map2].forEach(m=>L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(m));drawMaps()}
 function drawMaps(){if(!map1||!map2)return;[map1,map2].forEach(m=>m.eachLayer(l=>{if(l instanceof L.Marker)m.remove()}));let counts={};state.rounds.forEach(r=>(r.sites||[]).forEach(s=>{let c=cityOf(s);if(CITIES[c])counts[c]=(counts[c]||0)+1}));Object.entries(counts).forEach(([c,n])=>[map1,map2].forEach(m=>L.marker(CITIES[c]).addTo(m).bindPopup(`<b>${esc(c)}</b><br>عدد الجولات: ${n}<br><button onclick="showCity('${esc(c)}')">عرض الجولات</button>`)))}
-function addRound(){editRoundId=-1;if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");document.getElementById("rDate").value=today();document.getElementById("rType").value="معلن";document.getElementById("rTime").value="";document.getElementById("rOfficer").value="";document.getElementById("rNotes").value="";document.getElementById("roundTitle").textContent="إضافة جولة";document.getElementById("sitePick").innerHTML=SITES.map((s,i)=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}"> ${esc(s)}</label>`).join("");document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}"> ${esc(c.name)} — ${esc(c.spec)}${c.role==="رئيس فريق"?" — رئيس فريق":""}</label>`).join("");openModal("roundModal")}
+function crewOptions(selected=[]){return state.crew.map((c,i)=>`<option value="${i}" ${selected.includes(i)?"selected":""}>${esc(c.name)} — ${esc(c.rank||"")} — ${esc(c.spec||"")}${c.role==="رئيس فريق"?" — رئيس فريق":""}</option>`).join("")}
+function renderOfficerPick(selected=[]){document.getElementById("officerPick").innerHTML=state.crew.length?state.crew.map((c,i)=>`<label><input type="checkbox" class="officerBox" value="${i}" ${selected.includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.rank||"")}</label>`).join(""):"<div class='muted'>أضف الضباط/أعضاء الطاقم أولاً من صفحة طاقم الجولة.</div>"}
+function renderAxisAssignments(assignments={}){document.getElementById("axisAssignments").innerHTML=SPECS.map((spec,i)=>{let selected=Array.isArray(assignments[spec])?assignments[spec]:[];return `<div class="axis-row"><div><b>${i+1}. ${esc(spec)}</b><small>يمكن اختيار أكثر من معني</small></div><select class="axisBox" data-spec="${esc(spec)}" multiple size="4">${crewOptions(selected)}</select></div>`}).join("")}
+function readAxisAssignments(){let out={};document.querySelectorAll(".axisBox").forEach(sel=>{let vals=[...sel.selectedOptions].map(o=>+o.value);if(vals.length)out[sel.dataset.spec]=vals});return out}
+function selectedOfficerNames(){let names=[...document.querySelectorAll(".officerBox:checked")].map(x=>state.crew[+x.value]?.name).filter(Boolean);let extra=(document.getElementById("rOfficerExtra")?.value||"").split(/[,،\n]+/).map(x=>x.trim()).filter(Boolean);return [...names,...extra]}
+function addRound(){editRoundId=-1;if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");document.getElementById("rDate").value=today();document.getElementById("rType").value="معلن";document.getElementById("rTime").value="";document.getElementById("rOfficerExtra").value="";document.getElementById("rNotes").value="";document.getElementById("roundTitle").textContent="إضافة جولة / برنامج زيارة";document.getElementById("sitePick").innerHTML=SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}"> ${esc(s)}</label>`).join("");document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}"> ${esc(c.name)} — ${esc(c.spec)}${c.role==="رئيس فريق"?" — رئيس فريق":""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";renderOfficerPick([]);renderAxisAssignments({});openModal("roundModal")}
 function saveRound(){
   let sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value);
   if(!sites.length)return alert("اختر موقعاً واحداً على الأقل");
-  if(sites.length>1 && !currentUser.p.multi)return alert("المستخدم الحالي لا يملك صلاحية اختيار أكثر من موقع");
+  if(sites.length>1&&!currentUser.p.multi)return alert("المستخدم الحالي لا يملك صلاحية اختيار أكثر من موقع");
   let crew=[...document.querySelectorAll(".crewBox:checked")].map(x=>+x.value);
-  let data={date:document.getElementById("rDate").value,type:document.getElementById("rType").value,time:document.getElementById("rTime").value,officer:document.getElementById("rOfficer").value,notes:document.getElementById("rNotes").value,sites,crew};
+  let officers=[...document.querySelectorAll(".officerBox:checked")].map(x=>+x.value);
+  let officerNames=selectedOfficerNames();
+  let data={date:document.getElementById("rDate").value,type:document.getElementById("rType").value,time:document.getElementById("rTime").value,officer:officerNames.join("، "),officers,officerExtra:document.getElementById("rOfficerExtra").value,notes:document.getElementById("rNotes").value,sites,crew,assignments:readAxisAssignments()};
   if(editRoundId){let idx=state.rounds.findIndex(x=>x.id===editRoundId);if(idx>=0)state.rounds[idx]={...state.rounds[idx],...data};}
   else state.rounds.push({id:Date.now().toString(),...data});
   editRoundId=-1;save();closeModal("roundModal");renderAll();drawMaps()
@@ -316,11 +361,64 @@ function saveRound(){
 function editRound(id){
   if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية تعديل الجولات");
   let r=state.rounds.find(x=>x.id===id);if(!r)return;
-  editRoundId=id;document.getElementById("rDate").value=r.date;document.getElementById("rType").value=r.type;document.getElementById("rTime").value=r.time||"";document.getElementById("rOfficer").value=r.officer||"";document.getElementById("rNotes").value=r.notes||"";document.getElementById("roundTitle").textContent="تعديل الجولة";
-  document.getElementById("sitePick").innerHTML=SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}" ${r.sites.includes(s)?"checked":""}> ${esc(s)}</label>`).join("");
-  document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}" ${(r.crew||[]).includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.spec)}${c.role==="رئيس فريق"?" — رئيس فريق":""}</label>`).join("");
-  openModal("roundModal")
+  editRoundId=id;document.getElementById("rDate").value=r.date;document.getElementById("rType").value=r.type;document.getElementById("rTime").value=r.time||"";document.getElementById("rOfficerExtra").value=r.officerExtra||"";document.getElementById("rNotes").value=r.notes||"";document.getElementById("roundTitle").textContent="تعديل برنامج الجولة";
+  document.getElementById("sitePick").innerHTML=SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}" ${(r.sites||[]).includes(s)?"checked":""}> ${esc(s)}</label>`).join("");
+  document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}" ${(r.crew||[]).includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.spec)}${c.role==="رئيس فريق"?" — رئيس فريق":""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";
+  let selectedOfficers=Array.isArray(r.officers)?r.officers:[];if(!selectedOfficers.length&&r.officer){let parts=r.officer.split(/،|,/).map(x=>x.trim());selectedOfficers=state.crew.map((c,i)=>parts.includes(c.name)?i:-1).filter(i=>i>=0)}renderOfficerPick(selectedOfficers);renderAxisAssignments(r.assignments||{});openModal("roundModal")
 }
+function arabicDateFull(v){
+  if(!v)return "";
+  const d=new Date(v+'T12:00:00');
+  if(Number.isNaN(d.getTime()))return v;
+  const days=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const pad=n=>String(n).padStart(2,'0');
+  return `${days[d.getDay()]} الموافق ${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
+}
+function printCurrentRound(){
+  let sites=[...document.querySelectorAll('.siteBox:checked')].map(x=>x.value);
+  let crew=[...document.querySelectorAll('.crewBox:checked')].map(x=>state.crew[+x.value]).filter(Boolean);
+  let assignments=readAxisAssignments();
+  let officerNames=selectedOfficerNames();
+  let type=document.getElementById('rType').value||'معلن';
+  let date=document.getElementById('rDate').value||'';
+  let time=document.getElementById('rTime').value||'—';
+  let notes=document.getElementById('rNotes').value||'';
+  let siteText=sites.length?sites.join('، '):'—';
+
+  // نموذج الجدول: رقم المحور + المحور/التخصص + المعنيون، مع دمج أسماء المعنيين داخل الخلية.
+  let rows=SPECS.map((spec,i)=>{
+    let ids=Array.isArray(assignments[spec])?assignments[spec]:[];
+    let people=ids.map(id=>state.crew[id]).filter(Boolean);
+    let html=people.length
+      ? `<div class="ps-people">${people.map(c=>`<span class="ps-person"><b>${esc(c.rank||'')}</b> ${esc(c.name)}${c.role==='رئيس فريق'?` — ${esc(c.role)}`:''}</span>`).join('')}</div>`
+      : '<div class="ps-empty">—</div>';
+    return `<tr><td class="no">${i+1}</td><td class="axis">${esc(spec)}</td><td class="people">${html}</td></tr>`;
+  }).join('');
+
+  let selectedCrew=crew.length?crew.map((c,i)=>`${i+1}. ${c.rank||''} ${c.name}${c.role==='رئيس فريق'?' — رئيس فريق':''}`).join('، '):'—';
+
+  document.getElementById('printSheet').innerHTML=`
+    <div class="ps-title">برنامج الزيارات ${esc(type)} / مكتب المفتش العام</div>
+    <div class="ps-subtitle">${esc(arabicDateFull(date))}</div>
+    <table class="ps-info">
+      <tr>
+        <th class="label">الموقع</th><td class="value">${esc(siteText)}</td>
+        <th class="label">وقت الحركة</th><td class="value">${esc(time)}</td>
+      </tr>
+      <tr>
+        <th class="label">الضباط المعنيون</th><td class="value" colspan="3">${officerNames.length?officerNames.map(esc).join('، '):'—'}</td>
+      </tr>
+    </table>
+    <table class="ps-main">
+      <thead><tr><th class="no">#</th><th class="axis">المحور / التخصص</th><th class="people">المعنيون</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="ps-note"><b>طاقم الجولة المختار:</b> ${esc(selectedCrew)}</div>
+    ${notes?`<div class="ps-note"><b>ملاحظات:</b> ${esc(notes)}</div>`:''}
+    <div class="ps-footer"><span>رئيس الفريق: __________________________</span><span>التوقيع: __________________________</span></div>`;
+  window.print();
+}
+
 function openCrew(i=-1){editCrew=i;document.getElementById("cName").value=i<0?"":state.crew[i].name;document.getElementById("cRank").value=i<0?"":state.crew[i].rank;document.getElementById("cPhone").value=i<0?"":state.crew[i].phone||"";document.getElementById("cNotes").value=i<0?"":state.crew[i].notes||"";document.getElementById("cRole").value=i<0?"عضو":state.crew[i].role;document.getElementById("cSpec").innerHTML=SPECS.map(s=>`<option>${esc(s)}</option>`).join("");if(i>=0)document.getElementById("cSpec").value=state.crew[i].spec;openModal("crewModal")}
 function saveCrew(){if(!currentUser||!currentUser.p.crew)return alert("لا تملك صلاحية إدارة طاقم الجولة");let c={name:document.getElementById("cName").value,rank:document.getElementById("cRank").value,spec:document.getElementById("cSpec").value,role:document.getElementById("cRole").value,phone:document.getElementById("cPhone").value,notes:document.getElementById("cNotes").value};if(!c.name)return alert("أدخل الاسم");if(editCrew<0)state.crew.push(c);else state.crew[editCrew]=c;save();closeModal("crewModal");renderAll()}
 function openUser(i=-1){if(!currentUser||!currentUser.p.users)return alert("لا تملك صلاحية إدارة المستخدمين");editUser=i;let u=i<0?{u:"",full:"",pass:"",job:"",role:"مستخدم",p:{add:true,multi:false,crew:false,users:false,reports:true,map:true}}:state.users[i];["uName","uFull","uPass","uJob"].forEach((id,j)=>document.getElementById(id).value=[u.u,u.full,u.pass,u.job][j]||"");document.getElementById("uRole").value=u.role;for(let [id,k] of [["pAdd","add"],["pMulti","multi"],["pCrew","crew"],["pUsers","users"],["pReports","reports"],["pMap","map"]])document.getElementById(id).checked=!!u.p[k];openModal("userModal")}
