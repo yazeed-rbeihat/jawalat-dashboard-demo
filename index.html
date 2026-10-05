@@ -522,7 +522,18 @@ function drawH(id,obj){let el=document.getElementById(id),e=Object.entries(obj).
 function drawBars(id,obj){let el=document.getElementById(id),e=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,12);if(!e.length){el.innerHTML="<div class='muted'>لا توجد بيانات</div>";return}let mx=e[0][1];el.innerHTML=e.map(([k,v])=>`<div class='hbar'><b>${esc(k)}</b><div class='htrack'><div class='hfill' style='width:${v/mx*100}%'></div></div><b>${v}</b></div>`).join("")}
 function cityOf(s){for(let c of Object.keys(CITIES))if(s.includes(c))return c; if(s.includes("إربد"))return "اربد";if(s.includes("مادبا"))return "مادبا";if(s.includes("عمان"))return "عمان";if(s.includes("الزرقاء"))return "الزرقاء";return "غير محدد"}
 function initMaps(){if(!window.L)return;map1=L.map("map").setView([31.2,36.1],7);map2=L.map("map2").setView([31.2,36.1],7);[map1,map2].forEach(m=>L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(m));drawMaps()}
-function drawMaps(){if(!map1||!map2)return;[map1,map2].forEach(m=>m.eachLayer(l=>{if(l instanceof L.Marker)m.remove()}));let counts={};state.rounds.forEach(r=>(r.sites||[]).forEach(s=>{let c=cityOf(s);if(CITIES[c])counts[c]=(counts[c]||0)+1}));Object.entries(counts).forEach(([c,n])=>[map1,map2].forEach(m=>L.marker(CITIES[c]).addTo(m).bindPopup(`<b>${esc(c)}</b><br>عدد الجولات: ${n}<br><button onclick="showCity('${esc(c)}')">عرض الجولات</button>`)))}
+function drawMaps(){
+  try{
+    if(!map1||!map2||!window.L)return;
+    const maps=[map1,map2].filter(Boolean);
+    maps.forEach(m=>{try{m.eachLayer(l=>{if(l instanceof L.Marker)m.remove()})}catch(_e){}});
+    let counts={};
+    state.rounds.forEach(r=>(r.sites||[]).forEach(s=>{let c=cityOf(s);if(s&&CITIES[c])counts[c]=(counts[c]||0)+1}));
+    Object.entries(counts).forEach(([c,n])=>maps.forEach(m=>{
+      try{L.marker(CITIES[c]).addTo(m).bindPopup(`<b>${esc(c)}</b><br>عدد الجولات: ${n}<br><button onclick="showCity('${esc(c)}')">عرض الجولات</button>`)}catch(_e){}
+    }));
+  }catch(e){console.warn('drawMaps skipped:',e)}
+}
 function crewOptions(selected=[],spec=""){return state.crew.map((c,i)=>{if(spec==="قائد الفريق" && c.role!=="قائد فريق")return "";if(spec==="رئيس الفريق" && c.role!=="رئيس فريق")return "";if(spec!=="قائد الفريق" && c.role==="قائد فريق")return "";return `<option value="${i}" ${selected.includes(i)?"selected":""}>${esc(c.name)} — ${esc(c.rank||"")}${c.role?" — "+esc(c.role):""}${c.phone?" — "+esc(c.phone):""}</option>`}).join("")}
 function renderOfficerPick(selected=[]){document.getElementById("officerPick").innerHTML=state.crew.length?state.crew.map((c,i)=>`<label><input type="checkbox" class="officerBox" value="${i}" ${selected.includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.rank||"")}</label>`).join(""):"<div class='muted'>أضف الضباط/أعضاء الطاقم أولاً من صفحة طاقم الجولة.</div>"}
 function normalizeAssignments(assignments={},sites=[]){
@@ -642,8 +653,8 @@ function saveRound(){
 
     editRoundId=-1;
     closeModal("roundModal");
-    renderAll();
-    drawMaps();
+    try{renderAll()}catch(renderErr){console.warn("renderAll after save skipped:",renderErr)}
+    try{drawMaps()}catch(mapErr){console.warn("drawMaps after save skipped:",mapErr)}
     alert("تم حفظ الجولة بنجاح");
     return true;
   }catch(err){
@@ -962,12 +973,13 @@ function openDemoReport(){
 }
 
 function printCurrentRound(){
-  let sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value);
+  const blank=document.getElementById("siteModeBlank");
+  let sites=blank&&blank.checked?[""]:[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value).filter(Boolean);
+  if(!sites.length) sites=[""];
   let assignments=readAxisAssignments();
   let type=document.getElementById("rType").value||"معلن";
   let date=document.getElementById("rDate").value||"";
   let time=document.getElementById("rTime").value||"—";
-  if(!sites.length){alert("يرجى اختيار موقع واحد على الأقل");return;}
   // في الديمو: إذا لم تكن هناك تكليفات بعد، استخدم التوزيع التجريبي حتى تظهر النتيجة كاملة.
   const hasAssignments=Object.values(assignments||{}).some(site=>Object.values(site||{}).some(ids=>Array.isArray(ids)&&ids.length));
   if(!hasAssignments && sites.length===DEMO_ROUND_FULL.sites.length && sites.every((x,i)=>x===DEMO_ROUND_FULL.sites[i])) assignments=DEMO_ASSIGNMENTS_BY_SITE;
