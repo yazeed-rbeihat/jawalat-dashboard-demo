@@ -605,38 +605,137 @@ function buildProgramTable(sites,assignments){
 \nfunction printCleanDocument(reportHtml){
   const w=window.open('', '_blank', 'width=1200,height=800');
   if(!w){ alert('يرجى السماح بفتح نافذة الطباعة'); return; }
+
+  /* قالب مستقل للطباعة: لا نعتمد على ارتفاع ثابت لورقة A4،
+     لأن بعض تطبيقات Android Print Preview تتجاهل landscape وتقوم
+     بتصغير ورقة 297mm داخل صفحة Letter/Portrait. */
   const css=`
-    @page{size:A4 landscape;margin:0}
+    @page{size:A4 landscape;margin:5mm}
     *{box-sizing:border-box}
-    html,body{margin:0!important;padding:0!important;background:#fff!important;width:100%!important;min-height:0!important}
-    body{font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#111}
-    .sheet{width:297mm;height:210mm;overflow:hidden;margin:0;padding:4mm;box-sizing:border-box;background:#fff}
-    .ps-head{border:2px solid #111;text-align:center;padding:3mm;margin:0 0 1.5mm;font-weight:900;height:18mm;overflow:hidden}
-    .ps-head h1{font-size:14pt;margin:0 0 1mm;line-height:1.05}
-    .ps-head h2{font-size:8pt;margin:.4mm 0;line-height:1.05}
-    .ps-info{width:100%;border-collapse:collapse;table-layout:fixed;margin:0 0 1.5mm;font-size:6.8pt;height:8mm}
-    .ps-info th,.ps-info td{border:1.2px solid #111;padding:.7mm;text-align:center;line-height:1}
+    html,body{
+      margin:0!important;padding:0!important;
+      background:#fff!important;color:#111;
+      font-family:Tahoma,Arial,sans-serif;
+      direction:rtl;width:100%!important;
+    }
+    body{font-size:8pt}
+    .sheet{
+      width:100%!important;
+      max-width:100%!important;
+      height:auto!important;
+      min-height:0!important;
+      margin:0!important;
+      padding:2mm!important;
+      background:#fff;
+      overflow:visible!important;
+    }
+    .ps-head{
+      border:1.8px solid #111;
+      text-align:center;
+      padding:2mm 3mm;
+      margin:0 0 1.5mm;
+      font-weight:900;
+      min-height:16mm;
+      height:auto;
+      overflow:hidden;
+    }
+    .ps-head h1{font-size:16pt;margin:0 0 1mm;line-height:1.05}
+    .ps-head h2{font-size:9pt;margin:.5mm 0;line-height:1.05}
+    .ps-info{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      margin:0 0 1.5mm;
+      font-size:8pt;
+      height:auto;
+    }
+    .ps-info th,.ps-info td{
+      border:1.3px solid #111;
+      padding:1mm;
+      text-align:center;
+      line-height:1.05;
+    }
     .ps-info th{font-weight:900;background:#e9eef5}
-    .ps-program{width:100%;border-collapse:collapse;table-layout:fixed;font-size:6.2pt;margin:0}
-    .ps-program th,.ps-program td{border:1.2px solid #111;padding:.55mm .7mm;vertical-align:middle;line-height:1.02;overflow:hidden}
-    .ps-program th{background:#dfe7ee;font-weight:900;height:6mm}
-    .ps-program tr{height:auto;break-inside:avoid;page-break-inside:avoid}
-    .ps-program .axis-name{font-weight:900;font-size:6.3pt;width:31mm}
-    .ps-program td:first-child,.ps-program .num-head{width:5mm;text-align:center}
-    .ps-program .site-head{font-size:6pt}
-    .person-card{margin:0;padding:0;line-height:1.02;white-space:nowrap;overflow:hidden}
-    .person-name{font-size:6.1pt;font-weight:900}
-    .person-phone{font-size:5.7pt;font-weight:900;margin-right:1mm;display:inline-block}
+    .ps-program{
+      width:100%!important;
+      border-collapse:collapse;
+      table-layout:fixed;
+      font-size:7.8pt;
+      margin:0;
+    }
+    .ps-program th,.ps-program td{
+      border:1.4px solid #111;
+      padding:1mm 1.2mm;
+      vertical-align:middle;
+      line-height:1.05;
+      overflow:hidden;
+    }
+    .ps-program th{
+      background:#dfe7ee;
+      font-weight:900;
+      height:8mm;
+      font-size:8pt;
+      text-align:center;
+    }
+    .ps-program tr{
+      height:auto!important;
+      min-height:8mm;
+      break-inside:avoid;
+      page-break-inside:avoid;
+    }
+    .ps-program .axis-name{
+      font-weight:900;
+      font-size:8pt;
+      width:31mm;
+      background:#f1f4f6;
+    }
+    .ps-program td:first-child,.ps-program .num-head{
+      width:7mm;
+      text-align:center;
+      font-weight:900;
+    }
+    .ps-program .site-head{font-size:7.7pt}
+    .person-card{
+      margin:0;
+      padding:.3mm 0;
+      line-height:1.08;
+      white-space:normal;
+      overflow:visible;
+      text-align:right;
+    }
+    .person-name{
+      font-size:7.7pt;
+      font-weight:900;
+      white-space:nowrap;
+    }
+    .person-phone{
+      font-size:7.2pt;
+      font-weight:900;
+      margin-right:1.5mm;
+      display:inline;
+      white-space:nowrap;
+      direction:ltr;
+      unicode-bidi:embed;
+    }
     .person-card.leader{font-weight:900;background:#eef3f8}
     .person-card.head{font-weight:900;background:#f4f1e8}
     .legend,.report-legend,.ps-footer{display:none!important}
-    @media print{html,body{width:297mm!important;height:210mm!important;overflow:hidden!important}.sheet{page-break-after:avoid!important;break-after:avoid-page!important}}
+
+    /* منع انقسام الجدول قدر الإمكان */
+    .ps-program thead{display:table-header-group}
+    .ps-program tbody{display:table-row-group}
+    @media print{
+      html,body{width:100%!important;height:auto!important;overflow:visible!important}
+      .sheet{page-break-after:avoid!important;break-after:avoid-page!important}
+      .ps-program{page-break-inside:avoid!important;break-inside:avoid-page!important}
+    }
   `;
+
   w.document.open();
-  w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>برنامج الجولة</title><style>'+css+'</style></head><body><div class="sheet">'+reportHtml+'</div></body></html>');
+  w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>برنامج الجولة</title><style>'+css+'</style></head><body><div class="sheet">'+reportHtml+'</div></body></html>');
   w.document.close();
   w.focus();
-  setTimeout(()=>{w.print();},500);
+  setTimeout(()=>{w.print();},700);
 }
 
 function openDemoReport(){
