@@ -602,11 +602,48 @@ function buildProgramTable(sites,assignments){
   const rows=SPECS.map((spec,i)=>`<tr><td class="row-no">${i+1}</td><td class="axis-name">${esc(spec)}</td>${buildMergedSiteCells(sites,spec,assignments)}</tr>`).join("");
   return `<table class="ps-program official-program"><thead><tr>${cols.map((h,i)=>`<th class="${i===0?'num-head':i===1?'axis-head':'site-head'}">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
 }
+\nfunction printCleanDocument(reportHtml){
+  const w=window.open('', '_blank', 'width=1200,height=800');
+  if(!w){ alert('يرجى السماح بفتح نافذة الطباعة'); return; }
+  const css=`
+    @page{size:A4 landscape;margin:0}
+    *{box-sizing:border-box}
+    html,body{margin:0!important;padding:0!important;background:#fff!important;width:100%!important;min-height:0!important}
+    body{font-family:Tahoma,Arial,sans-serif;direction:rtl;color:#111}
+    .sheet{width:297mm;height:210mm;overflow:hidden;margin:0;padding:4mm;box-sizing:border-box;background:#fff}
+    .ps-head{border:2px solid #111;text-align:center;padding:3mm;margin:0 0 1.5mm;font-weight:900;height:18mm;overflow:hidden}
+    .ps-head h1{font-size:14pt;margin:0 0 1mm;line-height:1.05}
+    .ps-head h2{font-size:8pt;margin:.4mm 0;line-height:1.05}
+    .ps-info{width:100%;border-collapse:collapse;table-layout:fixed;margin:0 0 1.5mm;font-size:6.8pt;height:8mm}
+    .ps-info th,.ps-info td{border:1.2px solid #111;padding:.7mm;text-align:center;line-height:1}
+    .ps-info th{font-weight:900;background:#e9eef5}
+    .ps-program{width:100%;border-collapse:collapse;table-layout:fixed;font-size:6.2pt;margin:0}
+    .ps-program th,.ps-program td{border:1.2px solid #111;padding:.55mm .7mm;vertical-align:middle;line-height:1.02;overflow:hidden}
+    .ps-program th{background:#dfe7ee;font-weight:900;height:6mm}
+    .ps-program tr{height:auto;break-inside:avoid;page-break-inside:avoid}
+    .ps-program .axis-name{font-weight:900;font-size:6.3pt;width:31mm}
+    .ps-program td:first-child,.ps-program .num-head{width:5mm;text-align:center}
+    .ps-program .site-head{font-size:6pt}
+    .person-card{margin:0;padding:0;line-height:1.02;white-space:nowrap;overflow:hidden}
+    .person-name{font-size:6.1pt;font-weight:900}
+    .person-phone{font-size:5.7pt;font-weight:900;margin-right:1mm;display:inline-block}
+    .person-card.leader{font-weight:900;background:#eef3f8}
+    .person-card.head{font-weight:900;background:#f4f1e8}
+    .legend,.report-legend,.ps-footer{display:none!important}
+    @media print{html,body{width:297mm!important;height:210mm!important;overflow:hidden!important}.sheet{page-break-after:avoid!important;break-after:avoid-page!important}}
+  `;
+  w.document.open();
+  w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>برنامج الجولة</title><style>'+css+'</style></head><body><div class="sheet">'+reportHtml+'</div></body></html>');
+  w.document.close();
+  w.focus();
+  setTimeout(()=>{w.print();},500);
+}
+
 function openDemoReport(){
   const r=DEMO_ROUND_FULL;
   const assignments=r.assignments||{};
   document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(r.type)} للجولة — نموذج ديمو مطوّر</h2><div class="muted" style="margin-top:6px">جميع الأسماء والبيانات في هذا التقرير افتراضية ولأغراض العرض فقط</div></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(r.date))}</td><th>وقت الحركة</th><td>${esc(r.time)}</td><th>نوع الجولة</th><td>${esc(r.type)}</td></tr></table>${buildProgramTable(r.sites,assignments)}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
-  window.print();
+  printCleanDocument(document.getElementById("printSheet").innerHTML);
 }
 
 function printCurrentRound(){
@@ -620,7 +657,7 @@ function printCurrentRound(){
   const hasAssignments=Object.values(assignments||{}).some(site=>Object.values(site||{}).some(ids=>Array.isArray(ids)&&ids.length));
   if(!hasAssignments && sites.length===DEMO_ROUND_FULL.sites.length && sites.every((x,i)=>x===DEMO_ROUND_FULL.sites[i])) assignments=DEMO_ASSIGNMENTS_BY_SITE;
   document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(type)} للجولة</h2></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(date))}</td><th>وقت الحركة</th><td>${esc(time)}</td><th>نوع الجولة</th><td>${esc(type)}</td></tr></table>${buildProgramTable(sites,assignments)}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
-  window.print();
+  printCleanDocument(document.getElementById("printSheet").innerHTML);
 }
 
 function openCrew(i=-1){editCrew=i;document.getElementById("cName").value=i<0?"":state.crew[i].name;document.getElementById("cRank").value=i<0?"":state.crew[i].rank;document.getElementById("cPhone").value=i<0?"":state.crew[i].phone||"";document.getElementById("cNotes").value=i<0?"":state.crew[i].notes||"";document.getElementById("cRole").value=i<0?"عضو":state.crew[i].role;document.getElementById("cSpec").innerHTML=SPECS.map(s=>`<option>${esc(s)}</option>`).join("");if(i>=0)document.getElementById("cSpec").value=state.crew[i].spec;openModal("crewModal")}
