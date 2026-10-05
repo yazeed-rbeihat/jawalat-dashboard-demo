@@ -602,7 +602,7 @@ function buildProgramTable(sites,assignments){
   const rows=SPECS.map((spec,i)=>`<tr><td class="row-no">${i+1}</td><td class="axis-name">${esc(spec)}</td>${buildMergedSiteCells(sites,spec,assignments)}</tr>`).join("");
   return `<table class="ps-program official-program"><thead><tr>${cols.map((h,i)=>`<th class="${i===0?'num-head':i===1?'axis-head':'site-head'}">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
 }
-\nasync function generateDirectPdf(reportHtml){
+async function generateDirectPdf(reportHtml){
   try{
     const W=1122,H=793,S=2;
     const style=`
