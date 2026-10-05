@@ -1014,10 +1014,10 @@ function jpegToPdfSafe(b64, imgW, imgH){
 }
 
 async function generateDirectPdf(reportHtml, meta={}){
-  /* V25 — إعادة بناء التقرير بصرياً وفق النموذج اليدوي: أبيض/أسود، A4 أفقي،
+  /* V26 — مطابقة أدق للنموذج اليدوي الرسمي: أبيض/أسود، A4 أفقي،
      عنوان واحد، # والموقع يميناً، مجموعتا مواقع في الرأس، وتقسيمات أفقية داخل الصفوف. */
   try{
-    const W=2400, H=1697, M=42;
+    const W=2480, H=1754, M=38;
     const c=document.createElement('canvas'); c.width=W; c.height=H;
     const ctx=c.getContext('2d'); if(!ctx) throw new Error('Canvas context unavailable');
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.strokeStyle='#111'; ctx.fillStyle='#111';
@@ -1041,15 +1041,15 @@ async function generateDirectPdf(reportHtml, meta={}){
     function same(a,b){return a.join(',')===b.join(',');}
 
     /* title */
-    const titleY=18,titleH=84;
+    const titleY=16,titleH=82;
     rect(L,titleY,innerW,titleH,4);
     const title=`برنامج زيارات ${type} / مكتب المفتش العام ليوم ${day||'—'} الموافق ${dateText} م`;
-    center(title,L,titleY,innerW,titleH,fit(title,innerW-60,46,28,true),true);
+    center(title,L,titleY,innerW,titleH,fit(title,innerW-54,48,29,true),true);
 
     /* main table */
-    const tableY=118,bottom=H-58,headerH=292;
+    const tableY=112,bottom=H-48,headerH=286;
     const bodyTop=tableY+headerH, bodyH=bottom-bodyTop;
-    const numW=76, axisW=390;
+    const numW=82, axisW=450;
     const siteAreaW=innerW-numW-axisW;
     const siteX=L, axisX=siteX+siteAreaW, numX=axisX+axisW;
     const half=siteAreaW/2;
@@ -1060,7 +1060,7 @@ async function generateDirectPdf(reportHtml, meta={}){
     /* header: site groups are merged, exactly like the manual */
     rect(numX,tableY,numW,headerH,4); center('#',numX,tableY,numW,headerH,36,true);
     rect(axisX,tableY,axisW,headerH,4); center('الموقع',axisX,tableY,axisW,headerH,36,true);
-    function headerGroup(x,g){rect(x,tableY,half,headerH,4);const list=g.length?g:['—'];let fs=Math.min(34,Math.floor((headerH-28)/Math.max(1,list.length)));fs=Math.max(22,fs);while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v).width<=half-42))break;fs--;}const lh=Math.min(40,(headerH-24)/list.length);let y=tableY+headerH/2-(list.length-1)*lh/2;for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v,x+half/2,y);y+=lh;}}
+    function headerGroup(x,g){rect(x,tableY,half,headerH,4);const list=g.length?g:['—'];let fs=Math.min(36,Math.floor((headerH-24)/Math.max(1,list.length)));fs=Math.max(22,fs);while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v).width<=half-42))break;fs--;}const lh=Math.min(39,(headerH-22)/list.length);let y=tableY+headerH/2-(list.length-1)*lh/2;for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v,x+half/2,y);y+=lh;}}
     headerGroup(siteX+half,rightSites); headerGroup(siteX,leftSites);
 
     /* Body rows — preserve the manual's strong black grid and merge cells when the
@@ -1068,15 +1068,15 @@ async function generateDirectPdf(reportHtml, meta={}){
     const rowH=bodyH/SPECS.length;
     for(let i=0;i<SPECS.length;i++){
       const spec=SPECS[i], y=bodyTop+i*rowH;
-      rect(numX,y,numW,rowH,2); center(ar(i+1),numX,y,numW,rowH,26,true);
-      rect(axisX,y,axisW,rowH,2); right(spec,axisX,y+rowH/2,axisW,27,true);
+      rect(numX,y,numW,rowH,2); center(ar(i+1),numX,y,numW,rowH,27,true);
+      rect(axisX,y,axisW,rowH,2); right(spec,axisX,y+rowH/2,axisW,29,true);
       const a=groupIds(rightSites,spec), b=groupIds(leftSites,spec);
       if(same(a,b)){
         rect(siteX,y,siteAreaW,rowH,2);
         const vals=a.map(person).filter(Boolean);
         if(!vals.length){center('***',siteX,y,siteAreaW,rowH,27,true);}
         else{
-          let fs=29; while(fs>17){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=siteAreaW-50))break;fs--;}
+          let fs=30; while(fs>17){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=siteAreaW-50))break;fs--;}
           const lh=Math.min(34,Math.max(21,(rowH-8)/vals.length)); let yy=y+rowH/2-(vals.length-1)*lh/2;
           vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,siteX+siteAreaW-18,yy);yy+=lh;});
         }
@@ -1092,7 +1092,7 @@ async function generateDirectPdf(reportHtml, meta={}){
             const xx=x+(n-k-span)*cw; const ww=cw*span;
             rect(xx,y,ww,rowH,2);
             const vals=ids(g[k],spec).map(person).filter(Boolean);
-            if(vals.length){let fs=28;while(fs>15){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=ww-28))break;fs--;}const lh=Math.min(32,Math.max(19,(rowH-6)/vals.length));let yy=y+rowH/2-(vals.length-1)*lh/2;vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,xx+ww-12,yy);yy+=lh;});}
+            if(vals.length){let fs=29;while(fs>15){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=ww-28))break;fs--;}const lh=Math.min(32,Math.max(19,(rowH-6)/vals.length));let yy=y+rowH/2-(vals.length-1)*lh/2;vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,xx+ww-12,yy);yy+=lh;});}
             k+=span;
           }
         }
@@ -1101,8 +1101,8 @@ async function generateDirectPdf(reportHtml, meta={}){
     }
 
     /* footer */
-    font(25,true);ctx.textAlign='right';ctx.fillText('مدير إدارة الرقابة والتقييم',R,bottom+28);
-    font(22,true);ctx.textAlign='left';ctx.fillText('التوقيع: ____________________',L,bottom+28);
+    font(27,true);ctx.textAlign='right';ctx.fillText('مدير إدارة الرقابة والتقييم',R,bottom+26);
+    font(23,true);ctx.textAlign='left';ctx.fillText('التوقيع: ____________________',L,bottom+26);
 
     const dataUrl=c.toDataURL('image/jpeg',0.94);
     if(!window.jspdf?.jsPDF) throw new Error('تعذر تحميل محرك PDF؛ تحقق من اتصال الإنترنت ثم أعد المحاولة.');
@@ -1110,7 +1110,7 @@ async function generateDirectPdf(reportHtml, meta={}){
     const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
     doc.addImage(dataUrl,'JPEG',0,0,297,210,undefined,'FAST');
     doc.save(`برنامج_${String(type).replace(/[^\u0600-\u06FF\w\- ]/g,'_')}_${String(date).replace(/[^0-9\u0660-\u0669\-]/g,'_')}.pdf`);
-  }catch(e){console.error('V25 PDF error',e);alert('تعذر إنشاء التقرير: '+(e?.message||e));}
+  }catch(e){console.error('V26 PDF error',e);alert('تعذر إنشاء التقرير: '+(e?.message||e));}
 }
 
 function printCleanDocument(reportHtml){
