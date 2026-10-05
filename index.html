@@ -118,7 +118,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 @media(max-width:700px){.axis-row{grid-template-columns:1fr}.axis-row .axisBox{min-height:120px}}
 
 
-.official-program{font-size:8.5px;direction:rtl}.official-program .num-head{width:3%}.official-program .axis-head{width:13%}.official-program .site-head{width:auto}.official-program td.axis-name{text-align:right;font-weight:800;white-space:normal}.official-program td{min-height:48px}.official-program small{font-size:7.5px}.site-axis-block{border:1px solid #bbb;border-radius:8px;margin:8px 0;padding:8px}.site-axis-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}.site-axis-title b{font-size:13px}.site-axis-title .muted{font-size:11px}.ps-program{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:9px}.ps-program th,.ps-program td{border:1px solid #222;padding:4px 3px;vertical-align:middle;text-align:center;word-break:break-word}.ps-program th{background:#e9e9e9;font-weight:800}.ps-program .site-head{width:18%}.ps-program td.site-cell{text-align:right;font-weight:700}.ps-program td:not(.site-cell){min-height:42px}.ps-head{text-align:center}.ps-head h1{margin:0 0 4px}.ps-head h2{margin:2px 0;font-size:14px}.ps-info{margin-top:8px;font-size:10px}.ps-info th{width:12%;background:#eee}.ps-info td{text-align:center}.ps-footer{display:flex;justify-content:space-between;margin-top:24px;font-size:11px}
+.official-program{font-size:8.5px;direction:rtl}.official-program .num-head{width:3%}.official-program .axis-head{width:13%}.official-program .site-head{width:auto}.official-program td.axis-name{text-align:right;font-weight:800;white-space:normal}.official-program td{min-height:48px}.official-program small{font-size:7.5px}.site-axis-block{border:1px solid #bbb;border-radius:8px;margin:8px 0;padding:8px}.site-axis-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}.site-axis-title b{font-size:13px}.site-axis-title .muted{font-size:11px}.ps-program{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:9px}.ps-program th,.ps-program td{border:1px solid #222;padding:4px 3px;vertical-align:middle;text-align:center;word-break:break-word}.ps-program th{background:#e9e9e9;font-weight:800}.ps-program .site-head{width:18%}.ps-program td.site-cell{text-align:right;font-weight:700}.ps-program td:not(.site-cell){min-height:42px}.ps-head{text-align:center}.ps-head h1{margin:0 0 4px}.ps-head h2{margin:2px 0;font-size:14px}.ps-info{margin-top:8px;font-size:10px}.ps-info th{width:12%;background:#eee}.ps-info td{text-align:center}.ps-footer{display:block;direction:rtl;text-align:right;margin-top:12px;padding:0 6px;font-size:11px;font-weight:800}
 
 /* تحسين برنامج الجولة: حدود واضحة + أسماء بارزة + تمييز بصري عن النموذج الأصلي */
 @media print{
@@ -928,104 +928,130 @@ function buildProgramTable(sites,assignments){
   return `<table class="program-table ps-program"><colgroup>${widths}</colgroup><thead><tr><th class="num-head">م</th><th class="axis-head">المحور</th>${siteCols.map(c=>`<th class="site-head"><span class="site-label">الموقع</span><span class="site-name">${esc(c)}</span></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 async function generateDirectPdf(reportHtml, meta={}){
-  /* V10: إنشاء PDF مباشرة من Canvas. لا نستخدم SVG foreignObject ولا html2canvas
-     لأن بعض إصدارات Android/Chrome تفشل في تحويل HTML العربي إلى صورة. */
+  // V11: PDF مباشر بسيط وموثوق: Canvas -> JPEG -> PDF صفحة واحدة A4 Landscape.
+  // لا يعتمد على نافذة طباعة Android ولا على foreignObject.
   try{
-    const W=1600,H=1100;
+    const W=1800, H=1273;
     const canvas=document.createElement('canvas');
     canvas.width=W; canvas.height=H;
-    const ctx=canvas.getContext('2d',{alpha:false});
-    if(!ctx) throw new Error('Canvas غير متاح');
+    const ctx=canvas.getContext('2d');
+    if(!ctx) throw new Error('Canvas context unavailable');
     ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
     ctx.direction='rtl'; ctx.textBaseline='middle';
 
-    const M=38, innerW=W-M*2;
-    const title=meta.title||('برنامج '+(meta.type||'')+' للجولة');
+    const M=28, innerW=W-2*M;
     const type=meta.type||'معلن', date=meta.date||'', time=meta.time||'—';
     const sites=(meta.sites&&meta.sites.length)?meta.sites:['بدون موقع'];
     const assignments=meta.assignments||{};
 
     // Header
-    ctx.strokeStyle='#18364a'; ctx.lineWidth=2; ctx.fillStyle='#f3f7fa';
-    roundRect(ctx,M,28,innerW,108,12,true,true);
-    ctx.fillStyle='#102c3d'; ctx.textAlign='center'; ctx.font='900 30px Tahoma, Arial, sans-serif';
-    ctx.fillText('مديرية الأمن العام',W/2,52);
-    ctx.font='800 18px Tahoma, Arial, sans-serif'; ctx.fillText('إدارة الرقابة والتقييم / مكتب المفتش العام',W/2,82);
-    ctx.font='800 17px Tahoma, Arial, sans-serif'; ctx.fillText(title,W/2,110);
+    ctx.fillStyle='#f4f8fb'; ctx.strokeStyle='#17384d'; ctx.lineWidth=3;
+    ctx.fillRect(M,24,innerW,92); ctx.strokeRect(M,24,innerW,92);
+    ctx.fillStyle='#0f2e42'; ctx.textAlign='center';
+    ctx.font='bold 30px Tahoma, Arial, sans-serif'; ctx.fillText('مديرية الأمن العام',W/2,48);
+    ctx.font='bold 20px Tahoma, Arial, sans-serif'; ctx.fillText('إدارة الرقابة والتقييم / مكتب المفتش العام',W/2,75);
+    ctx.font='bold 18px Tahoma, Arial, sans-serif'; ctx.fillText('برنامج '+type+' للجولة',W/2,100);
 
-    // Info strip
-    const iy=145, ih=54;
-    ctx.fillStyle='#ffffff'; ctx.strokeStyle='#18364a'; ctx.lineWidth=2; ctx.fillRect(M,iy,innerW,ih); ctx.strokeRect(M,iy,innerW,ih);
-    const info=[['التاريخ',arabicDateFull(date)],['وقت الحركة',time],['نوع الجولة',type]];
+    // Info row
+    const iy=124, ih=52, cell=innerW/3;
     let ix=M;
-    const iw=innerW/3;
-    for(const [lab,val] of info){
-      ctx.fillStyle='#e8eff4'; ctx.fillRect(ix,iy,iw*0.28,ih); ctx.strokeStyle='#52616d'; ctx.strokeRect(ix,iy,iw*0.28,ih);
-      ctx.fillStyle='#14202b'; ctx.font='900 15px Tahoma, Arial, sans-serif'; ctx.textAlign='center'; ctx.fillText(lab,ix+iw*.14,iy+ih/2);
-      ctx.fillStyle='#fff'; ctx.fillRect(ix+iw*.28,iy,iw*.72,ih); ctx.strokeRect(ix+iw*.28,iy,iw*.72,ih);
-      ctx.font='800 14px Tahoma, Arial, sans-serif'; ctx.fillText(val,ix+iw*.64,iy+ih/2);
-      ix+=iw;
-    }
+    [['التاريخ',arabicDateFull(date)],['وقت الحركة',time],['نوع الجولة',type]].forEach(([lab,val])=>{
+      ctx.fillStyle='#e6eef3'; ctx.fillRect(ix,iy,cell*.22,ih); ctx.strokeStyle='#60727d'; ctx.lineWidth=1; ctx.strokeRect(ix,iy,cell*.22,ih);
+      ctx.fillStyle='#fff'; ctx.fillRect(ix+cell*.22,iy,cell*.78,ih); ctx.strokeRect(ix+cell*.22,iy,cell*.78,ih);
+      ctx.fillStyle='#17232c'; ctx.textAlign='center'; ctx.font='bold 15px Tahoma, Arial, sans-serif'; ctx.fillText(lab,ix+cell*.11,iy+ih/2);
+      ctx.font='bold 14px Tahoma, Arial, sans-serif'; ctx.fillText(String(val||'—'),ix+cell*.61,iy+ih/2);
+      ix+=cell;
+    });
 
-    // Table geometry
-    const ty=212, th=62, bottom=1058;
+    const ty=188, th=60, bottom=1240;
     const rowH=(bottom-ty-th)/SPECS.length;
-    const numW=48, axisW=255;
-    const siteW=(innerW-numW-axisW)/sites.length;
-    const tableX=M;
-
-    // outer table/header
-    ctx.strokeStyle='#18364a'; ctx.lineWidth=2; ctx.strokeRect(tableX,ty,innerW,bottom-ty);
-    let x=tableX;
-    drawCell(ctx,x,ty,numW,th,'م', '#dce7ee', 15,'center'); x+=numW;
-    drawCell(ctx,x,ty,axisW,th,'المحور', '#dce7ee', 15,'center'); x+=axisW;
-    sites.forEach(site=>{drawCell(ctx,x,ty,siteW,th,'الموقع\n'+(site||'بدون موقع'), '#dce7ee', 14,'center');x+=siteW;});
+    const numW=52, axisW=Math.min(280, innerW*.18), siteW=(innerW-numW-axisW)/sites.length;
+    function pdfCell(x,y,w,h,text,bg='#fff',fs=15,align='center',bold=true){
+      ctx.fillStyle=bg; ctx.fillRect(x,y,w,h); ctx.strokeStyle='#566771'; ctx.lineWidth=1.5; ctx.strokeRect(x,y,w,h);
+      ctx.fillStyle='#101a21'; ctx.font=`${bold?'bold ':''}${fs}px Tahoma, Arial, sans-serif`; ctx.textAlign=align;
+      const lines=String(text||'').split('\n'); const lh=fs*1.15; const st=y+h/2-(lines.length-1)*lh/2;
+      for(let i=0;i<lines.length;i++) ctx.fillText(lines[i],align==='right'?x+w-9:align==='left'?x+9:x+w/2,st+i*lh);
+    }
+    pdfCell(M,ty,numW,th,'م','#dce8ef',16);
+    pdfCell(M+numW,ty,axisW,th,'المحور','#dce8ef',16);
+    let x=M+numW+axisW;
+    sites.forEach(site=>{pdfCell(x,ty,siteW,th,'الموقع\n'+(site||'بدون موقع'),'#dce8ef',15);x+=siteW;});
 
     for(let r=0;r<SPECS.length;r++){
-      const y=ty+th+r*rowH;
-      let cx=tableX;
-      drawCell(ctx,cx,y,numW,rowH,String(r+1),'#f1f5f7',13,'center'); cx+=numW;
-      drawCell(ctx,cx,y,axisW,rowH,SPECS[r],'#edf2f5',13,'right'); cx+=axisW;
-      // Determine merged cells by identical assignment signatures, matching the web report.
+      const y=ty+th+r*rowH; x=M;
+      pdfCell(x,y,numW,rowH,String(r+1),'#f4f7f9',14); x+=numW;
+      pdfCell(x,y,axisW,rowH,SPECS[r],'#eef3f6',14,'right'); x+=axisW;
       let i=0;
       while(i<sites.length){
-        const site=sites[i];
-        const ids=peopleIdsFor(site,SPECS[r],assignments);
-        const sig=peopleSignature(ids);
-        let span=1;
+        const ids=peopleIdsFor(sites[i],SPECS[r],assignments);
+        const sig=peopleSignature(ids); let span=1;
         while(i+span<sites.length && peopleSignature(peopleIdsFor(sites[i+span],SPECS[r],assignments))===sig) span++;
         const w=siteW*span;
-        drawPeopleCell(ctx,cx,y,w,rowH,ids);
-        cx+=w; i+=span;
+        ctx.fillStyle='#fff'; ctx.fillRect(x,y,w,rowH); ctx.strokeStyle='#566771'; ctx.lineWidth=1.5; ctx.strokeRect(x,y,w,rowH);
+        const people=ids.map(id=>state.crew[id]).filter(Boolean);
+        if(!people.length){ctx.fillStyle='#687680';ctx.font='bold 13px Tahoma,Arial,sans-serif';ctx.textAlign='center';ctx.fillText('—',x+w/2,y+rowH/2);}
+        else{
+          const fs=people.length>2?12.5:14; const lh=Math.max(22,fs+7); let yy=y+rowH/2-(people.length-1)*lh/2;
+          for(const p of people){
+            let f=fs; const line=((p.rank||'')+' '+(p.name||'')).trim()+(p.phone?'   ☎ '+p.phone:'');
+            ctx.textAlign='right'; ctx.font='bold '+f+'px Tahoma,Arial,sans-serif';
+            while(f>9 && ctx.measureText(line).width>w-18){f-=.5;ctx.font='bold '+f+'px Tahoma,Arial,sans-serif';}
+            ctx.fillStyle='#111b22'; ctx.fillText(line,x+w-9,yy); yy+=lh;
+          }
+        }
+        x+=w; i+=span;
       }
     }
 
-    // Footer inside the same page
-    ctx.strokeStyle='#7b8790'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(M,1070); ctx.lineTo(W-M,1070); ctx.stroke();
-    ctx.fillStyle='#263746'; ctx.font='800 13px Tahoma, Arial, sans-serif'; ctx.textAlign='right'; ctx.fillText('رئيس الفريق: __________________',W-M,1086);
-    ctx.textAlign='left'; ctx.fillText('التوقيع: __________________',M,1086);
-
-    const jpeg=canvas.toDataURL('image/jpeg',0.94).split(',')[1];
-    const pdf=jpegToPdf(jpeg,W,H);
-    const blob=new Blob([pdf],{type:'application/pdf'});
+    // Create JPEG safely
+    const dataUrl=canvas.toDataURL('image/jpeg',0.92);
+    if(!dataUrl || dataUrl.indexOf('base64,')<0) throw new Error('Canvas export failed');
+    const b64=dataUrl.substring(dataUrl.indexOf('base64,')+7);
+    const pdfBytes=jpegToPdfSafe(b64,W,H);
+    const blob=new Blob([pdfBytes],{type:'application/pdf'});
     const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url; a.download='برنامج_الجولة_أفقي.pdf';
-    a.style.display='none'; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),30000);
-    // Some Android WebViews ignore the download click; provide a visible fallback without an alert.
-    setTimeout(()=>{
-      const b=document.createElement('button');
-      b.textContent='فتح ملف PDF';
-      b.style.cssText='position:fixed;bottom:18px;right:18px;z-index:99999;padding:12px 18px;border:0;border-radius:12px;background:#16845a;color:#fff;font-weight:900;box-shadow:0 5px 20px #0004';
-      b.onclick=()=>{window.open(url,'_blank');b.remove()};
-      document.body.appendChild(b); setTimeout(()=>b.remove(),12000);
-    },250);
+
+    // Open PDF first; this works better than download= on Android.
+    const opened=window.open(url,'_blank');
+    if(!opened){
+      const a=document.createElement('a'); a.href=url; a.download='برنامج_الجولة_أفقي.pdf'; a.rel='noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+    setTimeout(()=>URL.revokeObjectURL(url),120000);
   }catch(e){
-    console.error('direct PDF error',e);
-    alert('تعذر إنشاء ملف PDF مباشرة. سيتم فتح الطباعة كخيار احتياطي.');
+    console.error('V11 PDF error',e);
+    // Last resort: print, but do not show a misleading PDF error before it.
     printCleanDocument(reportHtml);
   }
+}
+
+function jpegToPdfSafe(base64,w,h){
+  const raw=atob(base64);
+  const img=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) img[i]=raw.charCodeAt(i);
+  const pw=841.8898, ph=595.2756;
+  const enc=s=>new TextEncoder().encode(s);
+  const chunks=[]; let pos=0; const offsets=[0];
+  const push=part=>{chunks.push(part);pos+=part.length};
+  push(enc('%PDF-1.3\n%\xFF\xFF\xFF\xFF\n'));
+  const objs=[
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>`,
+  ];
+  for(let i=0;i<objs.length;i++){offsets.push(pos);push(enc(`${i+1} 0 obj\n${objs[i]}\nendobj\n`));}
+  offsets.push(pos);
+  const content=`q\n${pw} 0 0 ${ph} 0 0 cm\n/Im0 Do\nQ\n`;
+  push(enc(`4 0 obj\n<< /Length ${content.length} >>\nstream\n${content}endstream\nendobj\n`));
+  offsets.push(pos);
+  const hdr=`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${w} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>\nstream\n`;
+  push(enc(hdr)); push(img); push(enc('\nendstream\nendobj\n'));
+  const xref=pos;
+  let xr='xref\n0 6\n0000000000 65535 f \n';
+  for(let i=1;i<=5;i++) xr+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+  xr+=`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  push(enc(xr));
+  const out=new Uint8Array(pos); let o=0; for(const c of chunks){out.set(c,o);o+=c.length;} return out;
 }
 
 function roundRect(ctx,x,y,w,h,r,fill,stroke){
@@ -1144,7 +1170,7 @@ function printCleanDocument(reportHtml){
 function openDemoReport(){
   const r=DEMO_ROUND_FULL;
   const assignments=r.assignments||{};
-  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(r.type)} للجولة — نموذج ديمو مطوّر</h2><div class="muted" style="margin-top:6px">جميع الأسماء والبيانات في هذا التقرير افتراضية ولأغراض العرض فقط</div></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(r.date))}</td><th>وقت الحركة</th><td>${esc(r.time)}</td><th>نوع الجولة</th><td>${esc(r.type)}</td></tr></table>${buildProgramTable(r.sites,assignments)}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
+  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(r.type)} للجولة — نموذج ديمو مطوّر</h2><div class="muted" style="margin-top:6px">جميع الأسماء والبيانات في هذا التقرير افتراضية ولأغراض العرض فقط</div></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(r.date))}</td><th>وقت الحركة</th><td>${esc(r.time)}</td><th>نوع الجولة</th><td>${esc(r.type)}</td></tr></table>${buildProgramTable(r.sites,assignments)}<div class="ps-footer"><span>مدير إدارة الرقابة والتقييم</span><br><span>التوقيع: __________________</span></div>`;
   generateDirectPdf(document.getElementById("printSheet").innerHTML,{title:`برنامج ${r.type} للجولة — نموذج ديمو مطوّر`,type:r.type,date:r.date,time:r.time,sites:r.sites,assignments:assignments});
 }
 
@@ -1159,7 +1185,7 @@ function printCurrentRound(){
   // في الديمو: إذا لم تكن هناك تكليفات بعد، استخدم التوزيع التجريبي حتى تظهر النتيجة كاملة.
   const hasAssignments=Object.values(assignments||{}).some(site=>Object.values(site||{}).some(ids=>Array.isArray(ids)&&ids.length));
   if(!hasAssignments && sites.length===DEMO_ROUND_FULL.sites.length && sites.every((x,i)=>x===DEMO_ROUND_FULL.sites[i])) assignments=DEMO_ASSIGNMENTS_BY_SITE;
-  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(type)} للجولة</h2></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(date))}</td><th>وقت الحركة</th><td>${esc(time)}</td><th>نوع الجولة</th><td>${esc(type)}</td></tr></table>${buildProgramTable(sites,assignments)}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
+  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(type)} للجولة</h2></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(date))}</td><th>وقت الحركة</th><td>${esc(time)}</td><th>نوع الجولة</th><td>${esc(type)}</td></tr></table>${buildProgramTable(sites,assignments)}<div class="ps-footer"><span>مدير إدارة الرقابة والتقييم</span><br><span>التوقيع: __________________</span></div>`;
   generateDirectPdf(document.getElementById("printSheet").innerHTML,{title:`برنامج ${type} للجولة`,type,date,time,sites,assignments});
 }
 
