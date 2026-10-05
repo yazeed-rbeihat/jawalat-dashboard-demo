@@ -713,69 +713,9 @@ function buildProgramTable(sites,assignments){
   return `<table class="program-table"><thead><tr>${cols.map((c,i)=>`<th class="${i<2?"fixed":""}">${esc(c||"")}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 async function generateDirectPdf(reportHtml){
-  try{
-    const W=1122,H=793,S=2;
-    const style=`
-      *{box-sizing:border-box}
-      html,body{margin:0!important;padding:0!important;background:#fff!important;color:#111;font-family:Tahoma,Arial,sans-serif;direction:rtl;width:1122px;height:793px;overflow:hidden}
-      .sheet{width:1122px;height:793px;margin:0;padding:14px;background:#fff}
-      .ps-head{border:2px solid #111;text-align:center;padding:9px 12px;margin:0 0 7px;font-weight:900;min-height:66px}
-      .ps-head h1{font-size:22px;margin:0 0 5px;line-height:1.05}
-      .ps-head h2{font-size:12px;margin:2px 0;line-height:1.05}
-      .ps-info{width:100%;border-collapse:collapse;table-layout:fixed;margin:0 0 7px;font-size:10px}
-      .ps-info th,.ps-info td{border:1.5px solid #111;padding:6px;text-align:center;line-height:1.05}
-      .ps-info th{font-weight:900;background:#e9eef5}
-      .ps-program{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;margin:0}
-      .ps-program th,.ps-program td{border:1.6px solid #111;padding:5px 6px;vertical-align:middle;line-height:1.08;overflow:hidden}
-      .ps-program th{background:#dfe7ee;font-weight:900;height:31px;font-size:10px;text-align:center}
-      .ps-program tr{break-inside:avoid;page-break-inside:avoid}
-      .ps-program .axis-name{font-weight:900;font-size:10px;width:150px;background:#f1f4f6}
-      .ps-program td:first-child,.ps-program .num-head{width:28px;text-align:center;font-weight:900}
-      .ps-program .site-head{font-size:10px}
-      .person-card{margin:0;padding:1px 0;line-height:1.08;white-space:normal;overflow:visible;text-align:right}
-      .person-name{font-size:10px;font-weight:900;white-space:nowrap}
-      .person-phone{font-size:9px;font-weight:900;margin-right:7px;display:inline;white-space:nowrap;direction:ltr;unicode-bidi:embed}
-      .person-card.leader{font-weight:900;background:#eef3f8}
-      .person-card.head{font-weight:900;background:#f4f1e8}
-      .legend,.report-legend,.ps-footer{display:none!important}
-    `;
-
-    const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="${W*S}" height="${H*S}" viewBox="0 0 ${W} ${H}">
-      <rect width="100%" height="100%" fill="white"/>
-      <foreignObject x="0" y="0" width="${W}" height="${H}">
-        <xhtml:div style="width:${W}px;height:${H}px;overflow:hidden">
-          <xhtml:style>${style}</xhtml:style>
-          <xhtml:div class="sheet">${reportHtml}</xhtml:div>
-        </xhtml:div>
-      </foreignObject>
-    </svg>`;
-
-    const blob=new Blob([svg],{type:"image/svg+xml;charset=utf-8"});
-    const url=URL.createObjectURL(blob);
-    const img=new Image();
-    img.onload=()=>{
-      const canvas=document.createElement("canvas");
-      canvas.width=W*S; canvas.height=H*S;
-      const ctx=canvas.getContext("2d");
-      ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.drawImage(img,0,0);
-      URL.revokeObjectURL(url);
-
-      const jpeg=canvas.toDataURL("image/jpeg",0.94).split(",")[1];
-      const pdf=jpegToPdf(jpeg,canvas.width,canvas.height);
-      const a=document.createElement("a");
-      a.href=URL.createObjectURL(new Blob([pdf],{type:"application/pdf"}));
-      a.download="برنامج_الجولة_A4_أفقي.pdf";
-      document.body.appendChild(a); a.click();
-      setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
-    };
-    img.onerror=()=>{URL.revokeObjectURL(url); alert("تعذر إنشاء PDF مباشرة على هذا الجهاز. سيتم فتح معاينة الطباعة."); printCleanDocument(reportHtml);};
-    img.src=url;
-  }catch(e){
-    console.error(e);
-    alert("تعذر إنشاء ملف PDF مباشرة، سيتم فتح المعاينة.");
-    printCleanDocument(reportHtml);
-  }
+  /* على الهاتف، حفظ ملف PDF مباشرة عبر Blob/Canvas قد لا يفتح مدير التنزيل.
+     لذلك نستخدم معاينة الطباعة الأصلية، ومنها يمكن اختيار "حفظ كـ PDF". */
+  printCleanDocument(reportHtml);
 }
 
 function jpegToPdf(base64,w,h){
@@ -830,142 +770,39 @@ stream
 }
 
 function printCleanDocument(reportHtml){
-  const w=window.open('', '_blank', 'width=1200,height=800');
-  if(!w){ alert('يرجى السماح بفتح نافذة الطباعة'); return; }
+  /* الطباعة المباشرة داخل نفس الصفحة: أكثر ثباتاً على Android/Chrome
+     ولا تعتمد على window.open أو نافذة منبثقة قد يمنعها المتصفح. */
+  try{
+    const sheet=document.getElementById("printSheet");
+    if(!sheet){
+      alert("تعذر العثور على نموذج التقرير للطباعة");
+      return;
+    }
+    sheet.innerHTML=reportHtml;
+    sheet.style.display="block";
+    const oldTitle=document.title;
+    document.title="برنامج الجولة";
 
-  /* قالب مستقل للطباعة: لا نعتمد على ارتفاع ثابت لورقة A4،
-     لأن بعض تطبيقات Android Print Preview تتجاهل landscape وتقوم
-     بتصغير ورقة 297mm داخل صفحة Letter/Portrait. */
-  const css=`
-    @page{size:A4 landscape;margin:5mm}
-    *{box-sizing:border-box}
-    html,body{
-      margin:0!important;padding:0!important;
-      background:#fff!important;color:#111;
-      font-family:Tahoma,Arial,sans-serif;
-      direction:rtl;width:100%!important;
-    }
-    body{font-size:8pt}
-    .sheet{
-      width:100%!important;
-      max-width:100%!important;
-      height:auto!important;
-      min-height:0!important;
-      margin:0!important;
-      padding:2mm!important;
-      background:#fff;
-      overflow:visible!important;
-    }
-    .ps-head{
-      border:1.8px solid #111;
-      text-align:center;
-      padding:2mm 3mm;
-      margin:0 0 1.5mm;
-      font-weight:900;
-      min-height:16mm;
-      height:auto;
-      overflow:hidden;
-    }
-    .ps-head h1{font-size:16pt;margin:0 0 1mm;line-height:1.05}
-    .ps-head h2{font-size:9pt;margin:.5mm 0;line-height:1.05}
-    .ps-info{
-      width:100%;
-      border-collapse:collapse;
-      table-layout:fixed;
-      margin:0 0 1.5mm;
-      font-size:8pt;
-      height:auto;
-    }
-    .ps-info th,.ps-info td{
-      border:1.3px solid #111;
-      padding:1mm;
-      text-align:center;
-      line-height:1.05;
-    }
-    .ps-info th{font-weight:900;background:#e9eef5}
-    .ps-program{
-      width:100%!important;
-      border-collapse:collapse;
-      table-layout:fixed;
-      font-size:7.8pt;
-      margin:0;
-    }
-    .ps-program th,.ps-program td{
-      border:1.4px solid #111;
-      padding:1mm 1.2mm;
-      vertical-align:middle;
-      line-height:1.05;
-      overflow:hidden;
-    }
-    .ps-program th{
-      background:#dfe7ee;
-      font-weight:900;
-      height:8mm;
-      font-size:8pt;
-      text-align:center;
-    }
-    .ps-program tr{
-      height:auto!important;
-      min-height:8mm;
-      break-inside:avoid;
-      page-break-inside:avoid;
-    }
-    .ps-program .axis-name{
-      font-weight:900;
-      font-size:8pt;
-      width:31mm;
-      background:#f1f4f6;
-    }
-    .ps-program td:first-child,.ps-program .num-head{
-      width:7mm;
-      text-align:center;
-      font-weight:900;
-    }
-    .ps-program .site-head{font-size:7.7pt}
-    .person-card{
-      margin:0;
-      padding:.3mm 0;
-      line-height:1.08;
-      white-space:normal;
-      overflow:visible;
-      text-align:right;
-    }
-    .person-name{
-      font-size:7.7pt;
-      font-weight:900;
-      white-space:nowrap;
-    }
-    .person-phone{
-      font-size:7.2pt;
-      font-weight:900;
-      margin-right:1.5mm;
-      display:inline;
-      white-space:nowrap;
-      direction:ltr;
-      unicode-bidi:embed;
-    }
-    .person-card.leader{font-weight:900;background:#eef3f8}
-    .person-card.head{font-weight:900;background:#f4f1e8}
-    .legend,.report-legend,.ps-footer{display:none!important}
-
-    /* منع انقسام الجدول قدر الإمكان */
-    .ps-program thead{display:table-header-group}
-    .ps-program tbody{display:table-row-group}
-    @media print{
-      html,body{width:100%!important;height:auto!important;overflow:visible!important}
-      .sheet{page-break-after:avoid!important;break-after:avoid-page!important}
-      .ps-program{page-break-inside:avoid!important;break-inside:avoid-page!important}
-    }
-  `;
-
-  w.document.open();
-  w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>برنامج الجولة</title><style>'+css+'</style></head><body><div class="sheet">'+reportHtml+'</div></body></html>');
-  w.document.close();
-  w.focus();
-  const doPrint=()=>{try{w.focus();w.print();}catch(e){console.error(e);}};
-  if(w.document.readyState==='complete') setTimeout(doPrint,250);
-  else w.onload=()=>setTimeout(doPrint,250);
-  setTimeout(doPrint,900);
+    /* نعطي المتصفح لحظة واحدة لتركيب التقرير قبل استدعاء الطباعة. */
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        try{
+          window.print();
+        }catch(e){
+          console.error("print error",e);
+          alert("تعذر فتح شاشة الطباعة على هذا الجهاز");
+        }finally{
+          setTimeout(()=>{
+            sheet.style.display="";
+            document.title=oldTitle;
+          },500);
+        }
+      });
+    });
+  }catch(e){
+    console.error("printCleanDocument error",e);
+    alert("حدث خطأ أثناء تجهيز تقرير الطباعة: "+(e?.message||e));
+  }
 }
 
 function openDemoReport(){
