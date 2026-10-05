@@ -118,7 +118,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 @media(max-width:700px){.axis-row{grid-template-columns:1fr}.axis-row .axisBox{min-height:120px}}
 
 
-.official-program{font-size:8.5px;direction:rtl}.official-program .num-head{width:3%}.official-program .axis-head{width:13%}.official-program .site-head{width:auto}.official-program td.axis-name{text-align:right;font-weight:800;white-space:normal}.official-program td{min-height:48px}.official-program small{font-size:7.5px}.site-axis-block{border:1px solid #bbb;border-radius:8px;margin:8px 0;padding:8px}.site-axis-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}.site-axis-title b{font-size:13px}.site-axis-title .muted{font-size:11px}.ps-program{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:9px}.ps-program th,.ps-program td{border:1px solid #222;padding:4px 3px;vertical-align:middle;text-align:center;word-break:break-word}.ps-program th{background:#e9e9e9;font-weight:800}.ps-program .site-head{width:18%}.ps-program td.site-cell{text-align:right;font-weight:700}.ps-program td:not(.site-cell){min-height:42px}.ps-head{text-align:center}.ps-head h1{margin:0 0 4px}.ps-head h2{margin:2px 0;font-size:14px}.ps-info{margin-top:8px;font-size:10px}.ps-info th{width:12%;background:#eee}.ps-info td{text-align:center}.ps-footer{display:block;direction:rtl;text-align:right;margin-top:12px;padding:0 6px;font-size:11px;font-weight:800}
+.official-program{font-size:8.5px;direction:rtl}.official-program .num-head{width:3%}.official-program .axis-head{width:13%}.official-program .site-head{width:auto}.official-program td.axis-name{text-align:right;font-weight:800;white-space:normal}.official-program td{min-height:48px}.official-program small{font-size:7.5px}.site-axis-block{border:1px solid #bbb;border-radius:8px;margin:8px 0;padding:8px}.site-axis-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}.site-axis-title b{font-size:13px}.site-axis-title .muted{font-size:11px}.ps-program{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:9px;direction:rtl}.ps-program th,.ps-program td{border:2px solid #253746;padding:4px 3px;vertical-align:middle;text-align:center;word-break:break-word}.ps-program th{background:#e9e9e9;font-weight:800}.ps-program .site-head{width:18%}.ps-program td.site-cell{text-align:right;font-weight:700}.ps-program td:not(.site-cell){min-height:42px}.ps-head{text-align:center}.ps-head h1{margin:0 0 4px}.ps-head h2{margin:2px 0;font-size:14px}.ps-info{margin-top:8px;font-size:10px}.ps-info th{width:12%;background:#eee}.ps-info td{text-align:center}.ps-footer{display:block;direction:rtl;text-align:right;margin-top:12px;padding:0 6px;font-size:11px;font-weight:800}
 
 /* تحسين برنامج الجولة: حدود واضحة + أسماء بارزة + تمييز بصري عن النموذج الأصلي */
 @media print{
@@ -386,6 +386,21 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   display:block;
   font-weight:900;
   line-height:1.25;
+}
+
+/* V18 — exact monochrome official-form layout */
+@media print{
+  @page{size:A4 landscape;margin:4mm}
+  html,body{direction:rtl!important;background:#fff!important;color:#111!important}
+  .exact-official{direction:rtl!important;border:2px solid #111!important;border-collapse:collapse!important;color:#111!important;background:#fff!important}
+  .exact-official th,.exact-official td{border:1.5px solid #111!important;background:#fff!important;color:#111!important;border-radius:0!important;box-shadow:none!important}
+  .exact-official th{font-weight:900!important;font-size:12pt!important;padding:7px!important}
+  .exact-official td{font-size:10.5pt!important;padding:6px!important}
+  .exact-official .axis-name{text-align:right!important;font-weight:900!important;background:#fff!important}
+  .exact-official .row-no{text-align:center!important;font-weight:900!important}
+  .exact-official .person-card{border:0!important;border-radius:0!important;padding:0!important;margin:0!important;background:#fff!important;box-shadow:none!important}
+  .exact-official .person-name{font-weight:900!important;font-size:10.5pt!important}
+  .exact-official .person-phone{display:inline!important;font-size:9.5pt!important;margin-right:4px!important}
 }
 </style>
 
@@ -960,129 +975,107 @@ function buildMergedSiteCells(sites,spec,assignments){
 function buildProgramTable(sites,assignments){
   sites=(sites&&sites.length)?sites:[""];
   const siteCols=sites.map(s=>s||"بدون موقع");
-  const rows=SPECS.map((spec,i)=>`<tr><td class="row-no">${i+1}</td><td class="axis-name">${esc(spec)}</td>${buildMergedSiteCells(sites,spec,assignments)}</tr>`).join("");
-  const widths=`<col style="width:7mm"><col style="width:43mm">`+
-    siteCols.map(()=>`<col class="site-col">`).join("");
-  return `<table class="program-table ps-program"><colgroup>${widths}</colgroup><thead><tr><th class="num-head">م</th><th class="axis-head">المحور</th>${siteCols.map(c=>`<th class="site-head"><span class="site-label">الموقع</span><span class="site-name">${esc(c)}</span></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+  const rows=SPECS.map((spec,i)=>{
+    const siteCells=buildMergedSiteCells(siteCols,spec,assignments);
+    return `<tr>${siteCells}<td class="axis-name">${esc(spec)}</td><td class="row-no">${i+1}</td></tr>`;
+  }).join("");
+  const widths=siteCols.map(()=>`<col class="site-col">`).join("")+`<col class="axis-col"><col class="num-col">`;
+  return `<table dir="rtl" class="program-table ps-program exact-official"><colgroup>${widths}</colgroup><thead><tr>${siteCols.map(c=>`<th class="site-head">${esc(c)}</th>`).join("")}<th class="axis-head">الموقع</th><th class="num-head">#</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 async function generateDirectPdf(reportHtml, meta={}){
-  // V11: PDF مباشر بسيط وموثوق: Canvas -> JPEG -> PDF صفحة واحدة A4 Landscape.
-  // لا يعتمد على نافذة طباعة Android ولا على foreignObject.
+  // V18: official black-and-white form, modeled directly on the supplied paper form.
   try{
-    const W=1800, H=1273;
-    const canvas=document.createElement('canvas');
-    canvas.width=W; canvas.height=H;
-    const ctx=canvas.getContext('2d');
-    if(!ctx) throw new Error('Canvas context unavailable');
-    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
-    ctx.direction='rtl'; ctx.textBaseline='middle';
-
-    const M=28, innerW=W-2*M;
+    const W=2000, H=1414;
+    const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+    const ctx=canvas.getContext('2d'); if(!ctx) throw new Error('Canvas context unavailable');
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.direction='rtl'; ctx.textBaseline='middle';
+    const M=42, right=W-M, left=M, innerW=W-2*M;
     const type=meta.type||'معلن', date=meta.date||'', time=meta.time||'—';
     const sites=(meta.sites&&meta.sites.length)?meta.sites:['بدون موقع'];
     const assignments=meta.assignments||{};
+    const dayNames=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+    let day=''; try{const d=new Date(date+'T00:00:00'); if(!isNaN(d)) day=dayNames[d.getDay()]}catch(e){}
+    const dateTxt=arabicDateFull(date).replace(/^.*?الموافق\s*/,'') || date;
 
-    // Header
-    ctx.fillStyle='#f4f8fb'; ctx.strokeStyle='#17384d'; ctx.lineWidth=3;
-    ctx.fillRect(M,24,innerW,92); ctx.strokeRect(M,24,innerW,92);
-    ctx.fillStyle='#0f2e42'; ctx.textAlign='center';
-    ctx.font='bold 30px Tahoma, Arial, sans-serif'; ctx.fillText('مديرية الأمن العام',W/2,48);
-    ctx.font='bold 20px Tahoma, Arial, sans-serif'; ctx.fillText('إدارة الرقابة والتقييم / مكتب المفتش العام',W/2,75);
-    ctx.font='bold 18px Tahoma, Arial, sans-serif'; ctx.fillText('برنامج '+type+' للجولة',W/2,100);
-
-    // Info row
-    const iy=124, ih=52, cell=innerW/3;
-    let ix=M;
-    [['التاريخ',arabicDateFull(date)],['وقت الحركة',time],['نوع الجولة',type]].forEach(([lab,val])=>{
-      ctx.fillStyle='#e6eef3'; ctx.fillRect(ix,iy,cell*.22,ih); ctx.strokeStyle='#60727d'; ctx.lineWidth=1; ctx.strokeRect(ix,iy,cell*.22,ih);
-      ctx.fillStyle='#fff'; ctx.fillRect(ix+cell*.22,iy,cell*.78,ih); ctx.strokeRect(ix+cell*.22,iy,cell*.78,ih);
-      ctx.fillStyle='#17232c'; ctx.textAlign='center'; ctx.font='bold 15px Tahoma, Arial, sans-serif'; ctx.fillText(lab,ix+cell*.11,iy+ih/2);
-      ctx.font='bold 14px Tahoma, Arial, sans-serif'; ctx.fillText(String(val||'—'),ix+cell*.61,iy+ih/2);
-      ix+=cell;
-    });
-
-    const ty=188, th=60, bottom=1240;
-    const rowH=(bottom-ty-th)/SPECS.length;
-    // RTL layout: from RIGHT to LEFT = number, axis, then sites.
-    const numW=52, axisW=Math.min(280, innerW*.18), siteW=(innerW-numW-axisW)/sites.length;
-    function pdfCell(x,y,w,h,text,bg='#fff',fs=15,align='center',bold=true){
-      ctx.fillStyle=bg; ctx.fillRect(x,y,w,h); ctx.strokeStyle='#566771'; ctx.lineWidth=1.5; ctx.strokeRect(x,y,w,h);
-      ctx.fillStyle='#101a21'; ctx.font=`${bold?'bold ':''}${fs}px Tahoma, Arial, sans-serif`; ctx.textAlign=align;
-      const lines=String(text||'').split('\n'); const lh=fs*1.15; const st=y+h/2-(lines.length-1)*lh/2;
-      for(let i=0;i<lines.length;i++) ctx.fillText(lines[i],align==='right'?x+w-9:align==='left'?x+9:x+w/2,st+i*lh);
+    function rect(x,y,w,h,fill='#fff',stroke='#111',lw=2){ctx.fillStyle=fill;ctx.fillRect(x,y,w,h);ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.strokeRect(x,y,w,h);}
+    function text(txt,x,y,w,fs=18,bold=true,align='center'){
+      ctx.fillStyle='#111'; ctx.font=`${bold?'bold ':''}${fs}px Tahoma,Arial,sans-serif`; ctx.textAlign=align; ctx.direction='rtl';
+      ctx.fillText(String(txt||''),align==='right'?x+w-10:align==='left'?x+10:x+w/2,y);
     }
-    // Draw the columns explicitly from the RIGHT edge so Arabic reading order is preserved.
-    let xRight=M+innerW;
-    const numX=xRight-numW;
-    pdfCell(numX,ty,numW,th,'م','#dce8ef',16);
-    xRight=numX;
-    const axisX=xRight-axisW;
-    pdfCell(axisX,ty,axisW,th,'المحور','#dce8ef',16);
-    xRight=axisX;
-    // Site columns continue from right-to-left, exactly matching the Arabic report order.
-    for(let si=0;si<sites.length;si++){
-      const sx=xRight-siteW;
-      pdfCell(sx,ty,siteW,th,'الموقع\n'+(sites[si]||'بدون موقع'),'#dce8ef',15);
-      xRight=sx;
+    function fitText(txt,maxW,fs=18,bold=true){
+      let f=fs; ctx.font=`${bold?'bold ':''}${f}px Tahoma,Arial,sans-serif`;
+      while(f>9 && ctx.measureText(txt).width>maxW){f-=.5;ctx.font=`${bold?'bold ':''}${f}px Tahoma,Arial,sans-serif`;} return f;
+    }
+    function personLine(p,maxW){
+      const line=((p.rank||'')+' '+(p.name||'')).trim()+(p.phone?' ('+p.phone+')':'');
+      let f=17; ctx.font=`bold ${f}px Tahoma,Arial,sans-serif`; while(f>9&&ctx.measureText(line).width>maxW){f-=.5;ctx.font=`bold ${f}px Tahoma,Arial,sans-serif`;}
+      return {line,f};
     }
 
+    // Single title band — matching the supplied black/white form.
+    rect(left,18,innerW,76,'#fff','#111',4);
+    const title=`برنامج زيارات ${type} / مكتب المفتش العام ليوم ${day||'—'} الموافق ${dateTxt} م`;
+    const tf=fitText(title,innerW-50,31,true); text(title,left,56,innerW,tf,true,'center');
+
+    // Main table geometry: # on the far right, then the axis column labelled الموقع, then site columns.
+    const tableY=94, headH=205, bottom=1360, rowH=(bottom-tableY-headH)/SPECS.length;
+    const numW=62, axisW=430, siteW=(innerW-numW-axisW)/sites.length;
+    let x=right;
+    // Header site columns, first selected site is the rightmost site column after the axis column.
+    // We draw from LEFT to RIGHT for visual placement, but index sites so the first site is nearest the axis on the right.
+    const siteXs=[];
+    for(let i=sites.length-1;i>=0;i--){ const sx=x-siteW; siteXs.unshift({site:sites[i],x:sx,w:siteW}); x=sx; }
+    // siteXs is left-to-right; header order is site N ... site 2 ... site 1.
+    for(const col of siteXs){
+      rect(col.x,tableY,col.w,headH,'#fff','#111',2.5);
+      const name=col.site||'بدون موقع';
+      const words=String(name).split(/\s+/); const lines=[]; let cur='';
+      for(const w of words){const t=cur?cur+' '+w:w;ctx.font='bold 22px Tahoma,Arial,sans-serif';if(ctx.measureText(t).width>col.w-24&&cur){lines.push(cur);cur=w}else cur=t} if(cur)lines.push(cur);
+      ctx.fillStyle='#111';ctx.textAlign='center';ctx.direction='rtl';ctx.font='bold 22px Tahoma,Arial,sans-serif';
+      const lh=30; let yy=tableY+headH/2-(lines.length-1)*lh/2; for(const ln of lines){ctx.fillText(ln,col.x+col.w/2,yy);yy+=lh;}
+    }
+    x=left+innerW;
+    const axisX=x-numW-axisW;
+    rect(axisX,tableY,axisW,headH,'#fff','#111',2.5); text('الموقع',axisX,tableY+headH/2,axisW,28,true,'center');
+    const numX=right-numW;
+    rect(numX,tableY,numW,headH,'#fff','#111',2.5); text('#',numX,tableY+headH/2,numW,28,true,'center');
+
+    // Body: exact paper-like black/white grid. Axis column is second from the right, number is far right.
     for(let r=0;r<SPECS.length;r++){
-      const y=ty+th+r*rowH;
-      let rx=M+innerW;
-      const rnX=rx-numW;
-      pdfCell(rnX,y,numW,rowH,String(r+1),'#f4f7f9',14);
-      rx=rnX;
-      const raX=rx-axisW;
-      pdfCell(raX,y,axisW,rowH,SPECS[r],'#eef3f6',14,'right');
-      rx=raX;
-      let x=rx;
+      const y=tableY+headH+r*rowH;
+      // Number and axis cells first.
+      rect(numX,y,numW,rowH,'#fff','#111',1.8); text(String(r+1),numX,y+rowH/2,numW,18,true,'center');
+      rect(axisX,y,axisW,rowH,'#fff','#111',1.8); text(SPECS[r],axisX,y+rowH/2,axisW,18,true,'right');
+      // Site cells, from right to left; merge only when the assigned people are identical.
+      let rx=axisX;
       let i=0;
       while(i<sites.length){
-        const ids=peopleIdsFor(sites[i],SPECS[r],assignments);
-        const sig=peopleSignature(ids); let span=1;
+        const ids=peopleIdsFor(sites[i],SPECS[r],assignments); const sig=peopleSignature(ids); let span=1;
         while(i+span<sites.length && peopleSignature(peopleIdsFor(sites[i+span],SPECS[r],assignments))===sig) span++;
-        const w=siteW*span;
-        const cellX=x-w;
-        ctx.fillStyle='#fff'; ctx.fillRect(cellX,y,w,rowH); ctx.strokeStyle='#253746'; ctx.lineWidth=2; ctx.strokeRect(cellX,y,w,rowH);
+        const w=siteW*span, cellX=rx-w;
+        rect(cellX,y,w,rowH,'#fff','#111',1.6);
         const people=ids.map(id=>state.crew[id]).filter(Boolean);
-        if(!people.length){ctx.fillStyle='#687680';ctx.font='bold 13px Tahoma,Arial,sans-serif';ctx.textAlign='center';ctx.direction='rtl';ctx.fillText('—',cellX+w/2,y+rowH/2);}
+        if(!people.length){text('—',cellX,y+rowH/2,w,17,true,'center');}
         else{
-          const fs=people.length>2?13:15; const lh=Math.max(23,fs+8); let yy=y+rowH/2-(people.length-1)*lh/2;
-          for(const p of people){
-            let f=fs;
-            const line=((p.rank||'')+' '+(p.name||'')).trim()+(p.phone?' ('+p.phone+')':'');
-            ctx.direction='rtl'; ctx.textAlign='right'; ctx.font='bold '+f+'px Tahoma,Arial,sans-serif';
-            while(f>9 && ctx.measureText(line).width>w-18){f-=.5;ctx.font='bold '+f+'px Tahoma,Arial,sans-serif';}
-            ctx.fillStyle='#111b22'; ctx.fillText(line,cellX+w-10,yy); yy+=lh;
-          }
+          const lh=Math.min(27,Math.max(20,(rowH-12)/Math.max(1,people.length)));
+          let yy=y+rowH/2-(people.length-1)*lh/2;
+          for(const p of people){const q=personLine(p,w-18);ctx.fillStyle='#111';ctx.font=`bold ${q.f}px Tahoma,Arial,sans-serif`;ctx.textAlign='right';ctx.direction='rtl';ctx.fillText(q.line,cellX+w-9,yy);yy+=lh;}
         }
-        x=cellX; i+=span;
+        rx=cellX; i+=span;
       }
     }
 
-    // Official RTL footer
-    ctx.direction='rtl'; ctx.textAlign='right'; ctx.fillStyle='#17232c'; ctx.font='bold 17px Tahoma,Arial,sans-serif';
-    ctx.fillText('مدير إدارة الرقابة والتقييم',W-M,1254);
-    // Create JPEG safely
-    const dataUrl=canvas.toDataURL('image/jpeg',0.92);
-    if(!dataUrl || dataUrl.indexOf('base64,')<0) throw new Error('Canvas export failed');
-    const b64=dataUrl.substring(dataUrl.indexOf('base64,')+7);
-    const pdfBytes=jpegToPdfSafe(b64,W,H);
-    const blob=new Blob([pdfBytes],{type:'application/pdf'});
-    const url=URL.createObjectURL(blob);
+    // Official footer, Arabic RTL, matching the source form while retaining the requested director title.
+    ctx.strokeStyle='#111';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(left+20,bottom+12);ctx.lineTo(right-20,bottom+12);ctx.stroke();
+    ctx.fillStyle='#111';ctx.font='bold 17px Tahoma,Arial,sans-serif';ctx.textAlign='right';ctx.direction='rtl';ctx.fillText('مدير إدارة الرقابة والتقييم: __________________',right-20,bottom+35);
+    ctx.textAlign='left';ctx.fillText('التوقيع: __________________',left+20,bottom+35);
 
-    // Open PDF first; this works better than download= on Android.
-    const opened=window.open(url,'_blank');
-    if(!opened){
-      const a=document.createElement('a'); a.href=url; a.download='برنامج_الجولة_أفقي.pdf'; a.rel='noopener';
-      document.body.appendChild(a); a.click(); a.remove();
-    }
+    const dataUrl=canvas.toDataURL('image/jpeg',0.95); if(!dataUrl.includes('base64,')) throw new Error('Canvas export failed');
+    const b64=dataUrl.split('base64,')[1]; const pdfBytes=jpegToPdfSafe(b64,W,H);
+    const blob=new Blob([pdfBytes],{type:'application/pdf'}); const url=URL.createObjectURL(blob);
+    const opened=window.open(url,'_blank'); if(!opened){const a=document.createElement('a');a.href=url;a.download='برنامج_الجولات_رسمي.pdf';document.body.appendChild(a);a.click();a.remove();}
     setTimeout(()=>URL.revokeObjectURL(url),120000);
-  }catch(e){
-    console.error('V11 PDF error',e);
-    // Last resort: print, but do not show a misleading PDF error before it.
-    printCleanDocument(reportHtml);
-  }
+  }catch(e){console.error('V18 PDF error',e);printCleanDocument(reportHtml);}
 }
 
 function jpegToPdfSafe(base64,w,h){
@@ -1230,7 +1223,7 @@ function printCleanDocument(reportHtml){
 function openDemoReport(){
   const r=DEMO_ROUND_FULL;
   const assignments=r.assignments||{};
-  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(r.type)} للجولة — نموذج ديمو مطوّر</h2><div class="muted" style="margin-top:6px">جميع الأسماء والبيانات في هذا التقرير افتراضية ولأغراض العرض فقط</div></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(r.date))}</td><th>وقت الحركة</th><td>${esc(r.time)}</td><th>نوع الجولة</th><td>${esc(r.type)}</td></tr></table>${buildProgramTable(r.sites,assignments)}<div class="ps-footer"><span>مدير إدارة الرقابة والتقييم</span><br><span>التوقيع: __________________</span></div>`;
+  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>برنامج زيارات ${esc(r.type)} / مكتب المفتش العام</h1><h2>برنامج متابعة الجولات الميدانية</h2><div class="muted" style="margin-top:6px">جميع الأسماء والبيانات في هذا التقرير افتراضية ولأغراض العرض فقط</div></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(r.date))}</td><th>وقت الحركة</th><td>${esc(r.time)}</td><th>نوع الجولة</th><td>${esc(r.type)}</td></tr></table>${buildProgramTable(r.sites,assignments)}<div class="ps-footer"><span>مدير إدارة الرقابة والتقييم</span><br><span>التوقيع: __________________</span></div>`;
   generateDirectPdf(document.getElementById("printSheet").innerHTML,{title:`برنامج ${r.type} للجولة — نموذج ديمو مطوّر`,type:r.type,date:r.date,time:r.time,sites:r.sites,assignments:assignments});
 }
 
@@ -1245,7 +1238,7 @@ function printCurrentRound(){
   // في الديمو: إذا لم تكن هناك تكليفات بعد، استخدم التوزيع التجريبي حتى تظهر النتيجة كاملة.
   const hasAssignments=Object.values(assignments||{}).some(site=>Object.values(site||{}).some(ids=>Array.isArray(ids)&&ids.length));
   if(!hasAssignments && sites.length===DEMO_ROUND_FULL.sites.length && sites.every((x,i)=>x===DEMO_ROUND_FULL.sites[i])) assignments=DEMO_ASSIGNMENTS_BY_SITE;
-  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(type)} للجولة</h2></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(date))}</td><th>وقت الحركة</th><td>${esc(time)}</td><th>نوع الجولة</th><td>${esc(type)}</td></tr></table>${buildProgramTable(sites,assignments)}<div class="ps-footer"><span>مدير إدارة الرقابة والتقييم</span><br><span>التوقيع: __________________</span></div>`;
+  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>برنامج زيارات ${esc(type)} / مكتب المفتش العام</h1><h2>برنامج متابعة الجولات الميدانية</h2></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(date))}</td><th>وقت الحركة</th><td>${esc(time)}</td><th>نوع الجولة</th><td>${esc(type)}</td></tr></table>${buildProgramTable(sites,assignments)}<div class="ps-footer"><span>مدير إدارة الرقابة والتقييم</span><br><span>التوقيع: __________________</span></div>`;
   generateDirectPdf(document.getElementById("printSheet").innerHTML,{title:`برنامج ${type} للجولة`,type,date,time,sites,assignments});
 }
 
