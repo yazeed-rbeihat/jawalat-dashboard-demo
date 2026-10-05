@@ -467,6 +467,25 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 <style id="v14-phone-inline-final">
 .person-card .person-phone{display:inline !important;margin-right:3px !important;font-weight:700 !important;direction:ltr !important;unicode-bidi:isolate !important;white-space:nowrap !important;}
 #printSheet .person-card .person-phone{display:inline !important;margin-right:2px !important;font-weight:700 !important;direction:ltr !important;unicode-bidi:isolate !important;white-space:nowrap !important;}
+
+/* V15 — Arabic RTL official report refinements */
+@media print{
+  #printSheet, #printSheet *{direction:rtl!important;unicode-bidi:plaintext;}
+  #printSheet .ps-program{direction:rtl!important;table-layout:fixed!important;border-collapse:collapse!important;width:100%!important;}
+  #printSheet .ps-program th,#printSheet .ps-program td{border:1.8px solid #253746!important;}
+  #printSheet .ps-program th{background:#d9e3ea!important;color:#132635!important;font-weight:900!important;}
+  #printSheet .ps-program td.axis-name{background:#edf2f5!important;font-weight:900!important;text-align:right!important;padding:2.5mm 2.5mm!important;}
+  #printSheet .ps-program td.site-cell,#printSheet .ps-program td:not(.axis-name):not(.row-no){text-align:right!important;vertical-align:middle!important;padding:1.8mm 2.4mm!important;}
+  #printSheet .person-card{direction:rtl!important;text-align:right!important;display:block!important;border:0!important;border-bottom:1px solid #b7c1c8!important;border-radius:0!important;padding:1.2mm 0!important;margin:0!important;line-height:1.25!important;white-space:normal!important;}
+  #printSheet .person-card:last-child{border-bottom:0!important;}
+  #printSheet .person-name{font-size:9.2pt!important;font-weight:800!important;direction:rtl!important;unicode-bidi:plaintext!important;}
+  #printSheet .person-phone{display:inline!important;font-size:8.1pt!important;font-weight:700!important;direction:rtl!important;unicode-bidi:plaintext!important;margin-right:2mm!important;white-space:nowrap!important;}
+  #printSheet .site-head{direction:rtl!important;text-align:center!important;padding:2mm 1.5mm!important;}
+  #printSheet .site-label{display:block!important;font-size:7.5pt!important;font-weight:700!important;margin-bottom:1mm!important;}
+  #printSheet .site-name{display:block!important;font-size:9.2pt!important;font-weight:900!important;line-height:1.2!important;}
+  #printSheet .row-no{font-weight:900!important;text-align:center!important;}
+  #printSheet .ps-footer{direction:rtl!important;text-align:right!important;font-size:10.5pt!important;font-weight:900!important;margin-top:3mm!important;padding-right:2mm!important;}
+}
 </style>
 </head>
 <body>
@@ -901,7 +920,7 @@ function formatPerson(c){
   const role=(c.role||"");
   const cls=role.includes("قائد")?"leader":(role.includes("رئيس")?"head":"");
   const phone=c.phone?`<span class="person-phone">(${esc(c.phone)})</span>`:"";
-  return `<div class="person-card ${cls}"><span class="person-name">${esc(c.rank||"")} ${esc(c.name)}</span>${phone}</div>`;
+  return `<div class="person-card ${cls}" dir="rtl"><span class="person-name">${esc(c.rank||"")} ${esc(c.name)}</span>${phone}</div>`;
 }
 function peopleIdsFor(site,spec,assignments){
   return (Array.isArray(assignments?.[site]?.[spec])?assignments[site][spec]:[]).map(id=>+id).filter(id=>state.crew[id]);
@@ -918,7 +937,7 @@ function buildMergedSiteCells(sites,spec,assignments){
     let span=1;
     while(i+span<sites.length && peopleSignature(peopleIdsFor(sites[i+span],spec,assignments))===sig) span++;
     const content=ids.length?ids.map(id=>formatPerson(state.crew[id])).join(""):"—";
-    html+=`<td${span>1?` colspan="${span}"`:""}>${content}</td>`;
+    html+=`<td class="site-cell"${span>1?` colspan="${span}"`:""}>${content}</td>`;
     i+=span;
   }
   return html;
