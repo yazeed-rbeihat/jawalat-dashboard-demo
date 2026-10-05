@@ -1014,124 +1014,103 @@ function jpegToPdfSafe(b64, imgW, imgH){
 }
 
 async function generateDirectPdf(reportHtml, meta={}){
-  // V22 — exact manual-form geometry: monochrome, no meta strip, merged site headers,
-  // RTL visual order (# -> الموقع -> site groups from right to left), full-page landscape.
+  /* V25 — إعادة بناء التقرير بصرياً وفق النموذج اليدوي: أبيض/أسود، A4 أفقي،
+     عنوان واحد، # والموقع يميناً، مجموعتا مواقع في الرأس، وتقسيمات أفقية داخل الصفوف. */
   try{
-    const W=2200, H=1556, M=24;
-    const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
-    const ctx=canvas.getContext('2d'); if(!ctx) throw new Error('Canvas context unavailable');
-    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.strokeStyle='#000'; ctx.fillStyle='#000';
+    const W=2400, H=1697, M=42;
+    const c=document.createElement('canvas'); c.width=W; c.height=H;
+    const ctx=c.getContext('2d'); if(!ctx) throw new Error('Canvas context unavailable');
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.strokeStyle='#111'; ctx.fillStyle='#111';
     ctx.textBaseline='middle'; ctx.direction='rtl';
-    const L=M, R=W-M, innerW=W-2*M;
-    const clean=s=>String(s||'').trim();
-    const arabicDigits=s=>String(s).replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[+d]);
+    const L=M,R=W-M,innerW=W-2*M;
+    const clean=x=>String(x??'').trim();
+    const ar=x=>String(x).replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[+d]);
     const dayNames=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
     const date=clean(meta.date), type=clean(meta.type||'معلن');
     let day=''; try{const d=new Date(date+'T12:00:00'); if(!isNaN(d)) day=dayNames[d.getDay()]}catch(e){}
-    const dateText=arabicDigits(date.replaceAll('-','/'));
-    function font(size,bold=false){ctx.font=`${bold?'700 ':'400 '}${size}px Tahoma, Arial, sans-serif`;ctx.fillStyle='#000';ctx.direction='rtl';}
-    function fit(text,maxW,size=30,bold=true,min=12){let f=size;while(f>min){font(f,bold);if(ctx.measureText(text).width<=maxW)break;f-=1}return f;}
-    function strokeRect(x,y,w,h,lw=2){ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);ctx.strokeStyle='#000';ctx.lineWidth=lw;ctx.strokeRect(x,y,w,h);}
-    function center(text,x,y,w,h,size=28,bold=true){font(size,bold);ctx.textAlign='center';ctx.fillText(String(text||''),x+w/2,y+h/2);}
-    function right(text,x,y,w,size=25,bold=true){font(size,bold);ctx.textAlign='right';ctx.fillText(String(text||''),x+w-12,y);}
-    function wrap(text,maxW,size=24,bold=true){font(size,bold);const words=String(text||'').split(/\s+/).filter(Boolean);const lines=[];let cur='';for(const word of words){const t=cur?cur+' '+word:word;if(ctx.measureText(t).width>maxW&&cur){lines.push(cur);cur=word}else cur=t}if(cur)lines.push(cur);return lines;}
-    function centeredLines(lines,x,y,w,h,size,bold=true){let fs=size;let lh=Math.min(34,Math.max(20,(h-16)/Math.max(1,lines.length)));let yy=y+h/2-(lines.length-1)*lh/2;for(const line of lines){font(fs,bold);ctx.textAlign='center';ctx.fillText(line,x+w/2,yy);yy+=lh;}}
-    function personText(id){const p=state.crew[id];if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}${p.phone?` (${clean(p.phone)})`:''}`.trim();}
-    function idsFor(site,spec){return (Array.isArray(meta.assignments?.[site]?.[spec])?meta.assignments[site][spec]:[]).map(Number).filter(id=>state.crew[id]);}
-    function unique(ids){return [...new Set(ids)];}
-    function idsForGroup(group,spec){return unique(group.flatMap(site=>idsFor(site,spec)));}
-    function sameIds(a,b){return a.join(',')===b.join(',');}
+    const dateText=ar(date.replaceAll('-','/'));
+    function font(sz,b=true){ctx.font=`${b?'700':'400'} ${sz}px Tahoma, Arial, sans-serif`;ctx.fillStyle='#111';ctx.direction='rtl';}
+    function rect(x,y,w,h,lw=3){ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);ctx.strokeStyle='#111';ctx.lineWidth=lw;ctx.strokeRect(x,y,w,h);}
+    function center(t,x,y,w,h,sz,b=true){font(sz,b);ctx.textAlign='center';ctx.fillText(String(t||''),x+w/2,y+h/2);}
+    function right(t,x,y,w,sz,b=true){font(sz,b);ctx.textAlign='right';ctx.fillText(String(t||''),x+w-14,y);}
+    function fit(t,max,sz=42,min=18,b=true){let f=sz;while(f>min){font(f,b);if(ctx.measureText(t).width<=max)break;f--;};return f;}
+    function person(id){const p=state.crew[id];if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}${p.phone?` (${clean(p.phone)})`:''}`.trim();}
+    function ids(site,spec){return (Array.isArray(meta.assignments?.[site]?.[spec])?meta.assignments[site][spec]:[]).map(Number).filter(id=>state.crew[id]);}
+    function uniq(a){return [...new Set(a)];}
+    function groupIds(g,spec){return uniq(g.flatMap(site=>ids(site,spec)));}
+    function same(a,b){return a.join(',')===b.join(',');}
 
-    // --- Title: one bold bordered line, exactly like the paper model ---
-    const titleY=14, titleH=76;
-    strokeRect(L,titleY,innerW,titleH,4);
+    /* title */
+    const titleY=18,titleH=84;
+    rect(L,titleY,innerW,titleH,4);
     const title=`برنامج زيارات ${type} / مكتب المفتش العام ليوم ${day||'—'} الموافق ${dateText} م`;
-    const tf=fit(title,innerW-60,38,true,24); center(title,L,titleY,innerW,titleH,tf,true);
+    center(title,L,titleY,innerW,titleH,fit(title,innerW-60,46,28,true),true);
 
-    // --- Main table geometry ---
-    const tableY=104;
-    const bottom=H-28;
-    const headerH=255;
-    const bodyH=bottom-(tableY+headerH);
-    const rowH=bodyH/SPECS.length;
-    const numW=64;             // # at far right
-    const axisW=355;           // المحاور
-    const groupW=(innerW-numW-axisW)/2;
-    const numX=R-numW;
-    const axisX=numX-axisW;
-    const rightGroupX=axisX-groupW;
-    const leftGroupX=L;
-
-    // Column headers: # | الموقع | merged site group | merged site group
-    strokeRect(numX,tableY,numW,headerH,3);
-    center('#',numX,tableY,numW,headerH,32,true);
-    strokeRect(axisX,tableY,axisW,headerH,3);
-    center('الموقع',axisX,tableY,axisW,headerH,34,true);
-
+    /* main table */
+    const tableY=118,bottom=H-58,headerH=292;
+    const bodyTop=tableY+headerH, bodyH=bottom-bodyTop;
+    const numW=76, axisW=390;
+    const siteAreaW=innerW-numW-axisW;
+    const siteX=L, axisX=siteX+siteAreaW, numX=axisX+axisW;
+    const half=siteAreaW/2;
     const sites=(meta.sites||[]).filter(Boolean);
     const cut=Math.ceil(sites.length/2);
-    const groupRight=sites.slice(0,cut);
-    const groupLeft=sites.slice(cut);
-    function drawSiteGroup(x,group){
-      strokeRect(x,tableY,groupW,headerH,3);
-      const list=group.length?group:['—'];
-      // Each site is a line inside ONE merged header cell.
-      let fs=Math.min(28,Math.max(18,Math.floor(260/Math.max(1,list.length))));
-      const maxW=groupW-45;
-      while(fs>15){font(fs,true);if(list.every(s=>ctx.measureText(s).width<=maxW))break;fs-=1;}
-      const lh=Math.min(33,(headerH-20)/Math.max(1,list.length));
-      let y=tableY+headerH/2-(list.length-1)*lh/2;
-      list.forEach(site=>{font(fs,true);ctx.textAlign='center';ctx.fillText(site,x+groupW/2,y);y+=lh;});
-    }
-    drawSiteGroup(rightGroupX,groupRight);
-    drawSiteGroup(leftGroupX,groupLeft);
+    const rightSites=sites.slice(0,cut), leftSites=sites.slice(cut);
 
-    // --- Body. The two site-group cells are merged horizontally when assignments match,
-    // just like the manual form. Otherwise both group cells remain separate. ---
+    /* header: site groups are merged, exactly like the manual */
+    rect(numX,tableY,numW,headerH,4); center('#',numX,tableY,numW,headerH,36,true);
+    rect(axisX,tableY,axisW,headerH,4); center('الموقع',axisX,tableY,axisW,headerH,36,true);
+    function headerGroup(x,g){rect(x,tableY,half,headerH,4);const list=g.length?g:['—'];let fs=Math.min(34,Math.floor((headerH-28)/Math.max(1,list.length)));fs=Math.max(22,fs);while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v).width<=half-42))break;fs--;}const lh=Math.min(40,(headerH-24)/list.length);let y=tableY+headerH/2-(list.length-1)*lh/2;for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v,x+half/2,y);y+=lh;}}
+    headerGroup(siteX+half,rightSites); headerGroup(siteX,leftSites);
+
+    /* Body rows — preserve the manual's strong black grid and merge cells when the
+       same assignment repeats across adjacent site groups. Row heights are compact. */
+    const rowH=bodyH/SPECS.length;
     for(let i=0;i<SPECS.length;i++){
-      const spec=SPECS[i], y=tableY+headerH+i*rowH;
-      strokeRect(numX,y,numW,rowH,1.8); center(String(i+1),numX,y,numW,rowH,24,true);
-      strokeRect(axisX,y,axisW,rowH,1.8); right(spec,axisX,y+rowH/2,axisW,25,true);
-      const a=idsForGroup(groupRight,spec), b=idsForGroup(groupLeft,spec);
-      if(sameIds(a,b)){
-        const all=a;
-        strokeRect(leftGroupX,y,groupW*2,rowH,1.8);
-        if(!all.length){center('***',leftGroupX,y,groupW*2,rowH,24,true);}
+      const spec=SPECS[i], y=bodyTop+i*rowH;
+      rect(numX,y,numW,rowH,2); center(ar(i+1),numX,y,numW,rowH,26,true);
+      rect(axisX,y,axisW,rowH,2); right(spec,axisX,y+rowH/2,axisW,27,true);
+      const a=groupIds(rightSites,spec), b=groupIds(leftSites,spec);
+      if(same(a,b)){
+        rect(siteX,y,siteAreaW,rowH,2);
+        const vals=a.map(person).filter(Boolean);
+        if(!vals.length){center('***',siteX,y,siteAreaW,rowH,27,true);}
         else{
-          const texts=all.map(personText).filter(Boolean); let fs=26;
-          while(fs>15){font(fs,true);if(texts.every(t=>ctx.measureText(t).width<=groupW*2-30))break;fs-=1;}
-          const lh=Math.min(31,Math.max(21,(rowH-8)/Math.max(1,texts.length)));
-          let yy=y+rowH/2-(texts.length-1)*lh/2;
-          texts.forEach(t=>{font(fs,true);ctx.textAlign='right';ctx.fillText(t,leftGroupX+groupW*2-14,yy);yy+=lh;});
+          let fs=29; while(fs>17){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=siteAreaW-50))break;fs--;}
+          const lh=Math.min(34,Math.max(21,(rowH-8)/vals.length)); let yy=y+rowH/2-(vals.length-1)*lh/2;
+          vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,siteX+siteAreaW-18,yy);yy+=lh;});
         }
       }else{
-        const drawCell=(x,ids)=>{
-          strokeRect(x,y,groupW,rowH,1.8);
-          if(!ids.length){center('',x,y,groupW,rowH,20,false);return;}
-          const texts=ids.map(personText).filter(Boolean); let fs=25;
-          while(fs>14){font(fs,true);if(texts.every(t=>ctx.measureText(t).width<=groupW-26))break;fs-=1;}
-          const lh=Math.min(30,Math.max(19,(rowH-8)/Math.max(1,texts.length)));
-          let yy=y+rowH/2-(texts.length-1)*lh/2;
-          texts.forEach(t=>{font(fs,true);ctx.textAlign='right';ctx.fillText(t,x+groupW-12,yy);yy+=lh;});
-        };
-        drawCell(rightGroupX,a); drawCell(leftGroupX,b);
+        /* split each half into as many visual cells as there are sites in that half,
+           then merge adjacent cells having the same assignment signature. */
+        function drawGroup(x,g){
+          const n=Math.max(1,g.length), cw=half/n;
+          let k=0;
+          while(k<n){
+            const sig=ids(g[k],spec).join(','); let span=1;
+            while(k+span<n && ids(g[k+span],spec).join(',')===sig) span++;
+            const xx=x+(n-k-span)*cw; const ww=cw*span;
+            rect(xx,y,ww,rowH,2);
+            const vals=ids(g[k],spec).map(person).filter(Boolean);
+            if(vals.length){let fs=28;while(fs>15){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=ww-28))break;fs--;}const lh=Math.min(32,Math.max(19,(rowH-6)/vals.length));let yy=y+rowH/2-(vals.length-1)*lh/2;vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,xx+ww-12,yy);yy+=lh;});}
+            k+=span;
+          }
+        }
+        drawGroup(siteX+half,rightSites); drawGroup(siteX,leftSites);
       }
     }
 
-    // Exact-form footer: minimal, no extra colored elements.
-    ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(L,bottom+2);ctx.lineTo(R,bottom+2);ctx.stroke();
-    font(20,true);ctx.textAlign='right';ctx.fillText('مدير إدارة الرقابة والتقييم',R-10,bottom+17);
+    /* footer */
+    font(25,true);ctx.textAlign='right';ctx.fillText('مدير إدارة الرقابة والتقييم',R,bottom+28);
+    font(22,true);ctx.textAlign='left';ctx.fillText('التوقيع: ____________________',L,bottom+28);
 
-    const dataUrl=canvas.toDataURL('image/jpeg',0.90);
-    if(!dataUrl.includes('base64,')) throw new Error('Canvas export failed');
-    if(!window.jspdf || !window.jspdf.jsPDF) throw new Error('تعذر تحميل محرك PDF؛ تحقق من اتصال الإنترنت ثم أعد المحاولة.');
+    const dataUrl=c.toDataURL('image/jpeg',0.94);
+    if(!window.jspdf?.jsPDF) throw new Error('تعذر تحميل محرك PDF؛ تحقق من اتصال الإنترنت ثم أعد المحاولة.');
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
     doc.addImage(dataUrl,'JPEG',0,0,297,210,undefined,'FAST');
-    const safeType=String(meta.type||'الجولة').replace(/[^\u0600-\u06FF\w\- ]/g,'_');
-    const safeDate=String(meta.date||'').replace(/[^0-9\u0660-\u0669\-]/g,'_');
-    doc.save(`برنامج_${safeType}_${safeDate}.pdf`);
-  }catch(e){console.error('V22 PDF error',e); alert('تعذر إنشاء ملف PDF مباشرة: '+(e?.message||e));}
+    doc.save(`برنامج_${String(type).replace(/[^\u0600-\u06FF\w\- ]/g,'_')}_${String(date).replace(/[^0-9\u0660-\u0669\-]/g,'_')}.pdf`);
+  }catch(e){console.error('V25 PDF error',e);alert('تعذر إنشاء التقرير: '+(e?.message||e));}
 }
 
 function printCleanDocument(reportHtml){
