@@ -1016,7 +1016,17 @@ function jpegToPdfSafe(b64, imgW, imgH){
   objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>`);
   const content=`q\n${pageW} 0 0 ${pageH} 0 0 cm\n/Im0 Do\nQ\n`;
   objects.push(`<< /Length ${content.length} >>\nstream\n${content}endstream`);
-  objects.push(`<< /Type /XObject /Subtype /Image /Width ${imgW} /Height ${imgH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>\nstream\n${String.fromCharCode(...img)}\nendstream`);
+  // Avoid spreading a large JPEG Uint8Array into String.fromCharCode(...), which can
+  // exceed the JavaScript call-stack limit on Android/Chrome. Convert in chunks instead.
+  let imgBinary='';
+  const chunkSize=0x8000;
+  for(let start=0; start<img.length; start+=chunkSize){
+    const end=Math.min(start+chunkSize,img.length);
+    let chunk='';
+    for(let j=start;j<end;j++) chunk+=String.fromCharCode(img[j]);
+    imgBinary+=chunk;
+  }
+  objects.push(`<< /Type /XObject /Subtype /Image /Width ${imgW} /Height ${imgH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>\nstream\n${imgBinary}\nendstream`);
   let pdf='%PDF-1.4\n%\xFF\xFF\xFF\xFF\n';
   const offsets=[0];
   for(let i=0;i<objects.length;i++){
