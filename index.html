@@ -482,7 +482,7 @@ function login(){
 }
 function logout(){currentUser=null;sessionStorage.removeItem("jawalat_session");document.getElementById("loginPass").value="";document.getElementById("loginScreen").classList.remove("hidden");document.getElementById("loginUser").focus()}
 function applyPermissions(){if(!currentUser)return;document.getElementById("currentUserLabel").textContent="المستخدم: "+currentUser.full;document.querySelectorAll('[onclick="addRound()"]') .forEach(b=>b.classList.toggle("hidden",!currentUser.p.add));const crewNav=[...document.querySelectorAll('.nav')].find(x=>x.textContent.includes("طاقم الجولة"));if(crewNav)crewNav.classList.toggle("hidden",!currentUser.p.crew);const usersNav=[...document.querySelectorAll('.nav')].find(x=>x.textContent.includes("المستخدمون"));if(usersNav)usersNav.classList.toggle("hidden",!currentUser.p.users);const reportNav=[...document.querySelectorAll('.nav')].find(x=>x.textContent.includes("التقارير"));if(reportNav)reportNav.classList.toggle("hidden",!currentUser.p.reports);const mapNav=[...document.querySelectorAll('.nav')].find(x=>x.textContent.includes("الخريطة"));if(mapNav)mapNav.classList.toggle("hidden",!currentUser.p.map)}
-function restoreSession(){const u=sessionStorage.getItem("jawalat_session");if(!u)return false;const found=state.users.find(x=>x.u===u);if(!found)return false;currentUser=found;document.getElementById("loginScreen").classList.add("hidden");return true}
+function restoreSession(){const u=sessionStorage.getItem("jawalat_session");if(!u)return false;const found=state.users.find(x=>x.u===u);if(!found)return false;found.p={add:true,multi:true,crew:true,users:true,reports:true,map:true,...(found.p||{})};currentUser=found;document.getElementById("loginScreen").classList.add("hidden");return true}
 
 
 function save(){localStorage.setItem(KEY,JSON.stringify(state))}
@@ -535,9 +535,8 @@ function normalizeAssignments(assignments={},sites=[]){
 }
 function renderAxisAssignments(assignments={}){
   const box=document.getElementById("axisAssignments");
-  const blank=document.getElementById("blankSiteBox");
-  const sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value);
-  if(blank && blank.checked) sites.push("");
+  const blank=document.getElementById("siteModeBlank");
+  const sites=blank && blank.checked ? [""] : [...document.querySelectorAll(".siteBox:checked")].map(x=>x.value);
   if(!sites.length){box.innerHTML='<div class="muted">اختر المواقع أولاً، ثم وزّع أكثر من شخص على كل محور عند الحاجة.</div>';return;}
   const norm=normalizeAssignments(assignments,sites);
   box.innerHTML=sites.map((site,si)=>{
@@ -559,28 +558,30 @@ function readAxisAssignments(){
   return out;
 }
 function bindSiteAssignmentRefresh(existing={}){
-  const blank=document.getElementById("blankSiteBox");
+  const blankRadio=document.getElementById("siteModeBlank");
+  const selectedRadio=document.getElementById("siteModeSelected");
   const boxes=[...document.querySelectorAll(".siteBox")];
-  function syncBlank(){
-    if(!blank)return;
-    const any=boxes.some(x=>x.checked);
-    if(any){blank.checked=false; blank.disabled=true;}
-    else {blank.disabled=false;}
+  const choices=document.getElementById("siteChoices");
+  const hint=document.getElementById("siteModeHint");
+  function mode(){return blankRadio&&blankRadio.checked?"blank":"selected";}
+  function sync(){
+    const isBlank=mode()==="blank";
+    boxes.forEach(x=>{x.disabled=isBlank;if(isBlank)x.checked=false;});
+    if(choices) choices.style.opacity=isBlank?".45":"1";
+    if(hint) hint.textContent=isBlank?"هذه الجولة بدون موقع. سيبقى مكان الموقع فارغاً في البرنامج، ويمكن إضافة الموقع لاحقاً عند تعديل الجولة.":"اختر موقعاً واحداً أو أكثر لهذه الجولة.";
+    renderAxisAssignments(isBlank?{}:existing);
   }
   boxes.forEach(cb=>cb.addEventListener("change",()=>{
+    if(selectedRadio) selectedRadio.checked=true;
     const current=readAxisAssignments();
-    syncBlank();
     renderAxisAssignments(Object.keys(current).length?current:existing);
   }));
-  if(blank) blank.addEventListener("change",()=>{
-    if(blank.checked){boxes.forEach(x=>{x.checked=false;x.disabled=true});}
-    else boxes.forEach(x=>x.disabled=false);
-    renderAxisAssignments({});
-  });
-  syncBlank();
+  if(blankRadio) blankRadio.addEventListener("change",sync);
+  if(selectedRadio) selectedRadio.addEventListener("change",sync);
+  sync();
 }
 function selectedOfficerNames(){let names=[...document.querySelectorAll(".officerBox:checked")].map(x=>state.crew[+x.value]?.name).filter(Boolean);let extra=(document.getElementById("rOfficerExtra")?.value||"").split(/[,،\n]+/).map(x=>x.trim()).filter(Boolean);return [...names,...extra]}
-function addRound(){editRoundId=-1;if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");document.getElementById("rDate").value=today();document.getElementById("rType").value="معلن";document.getElementById("rTime").value="";document.getElementById("rOfficerExtra").value="";document.getElementById("rNotes").value="";document.getElementById("roundTitle").textContent="إضافة جولة / برنامج زيارة";document.getElementById("sitePick").innerHTML=`<label style="display:block;margin-bottom:10px;padding:8px;border:1px dashed #94a3b8;border-radius:8px;background:#f8fafc"><input type="checkbox" id="blankSiteBox" value="__BLANK__"> <b>بدون موقع لهذه الجولة — يترك الموقع فارغاً في البرنامج</b></label>`+SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}"> ${esc(s)}</label>`).join("");document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}"> ${esc(c.name)} — ${esc(c.spec)}${c.role?" — "+esc(c.role):""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";renderOfficerPick([]);renderAxisAssignments({});bindSiteAssignmentRefresh({});openModal("roundModal")}
+function addRound(){editRoundId=-1;if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");document.getElementById("rDate").value=today();document.getElementById("rType").value="معلن";document.getElementById("rTime").value="";document.getElementById("rOfficerExtra").value="";document.getElementById("rNotes").value="";document.getElementById("roundTitle").textContent="إضافة جولة / برنامج زيارة";document.getElementById("sitePick").innerHTML=`<div class="site-mode" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><label class="site-mode-option" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:9px;background:#f8fafc;cursor:pointer"><input type="radio" name="siteMode" id="siteModeSelected" value="selected" checked> <b>تحديد موقع</b></label><label class="site-mode-option" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:9px;background:#f8fafc;cursor:pointer"><input type="radio" name="siteMode" id="siteModeBlank" value="blank"> <b>بدون موقع</b></label></div><div id="siteChoices">`+SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}"> ${esc(s)}</label>`).join("")+`</div><div class="muted" id="siteModeHint" style="margin-top:6px">اختر موقعاً أو أكثر لهذه الجولة، أو اختر «بدون موقع» لترك خانة الموقع فارغة.</div>`;document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}"> ${esc(c.name)} — ${esc(c.spec)}${c.role?" — "+esc(c.role):""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";renderOfficerPick([]);renderAxisAssignments({});bindSiteAssignmentRefresh({});openModal("roundModal")}
 function saveRound(){
   try{
     if(!currentUser || !currentUser.p || !currentUser.p.add){
@@ -588,11 +589,10 @@ function saveRound(){
       return false;
     }
 
-    const blank=document.getElementById("blankSiteBox");
-    let sites=[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value).filter(Boolean);
-
-    /* السماح بجولة بدون موقع: تحفظ كموقع فارغ ليظهر عمود الموقع فارغاً في البرنامج */
-    if(blank && blank.checked) sites=[""];
+    const blank=document.getElementById("siteModeBlank");
+    const isBlank=!!(blank && blank.checked);
+    let sites=isBlank?[""]:[...document.querySelectorAll(".siteBox:checked")].map(x=>x.value).filter(Boolean);
+    /* إذا لم يختر المستخدم موقعاً في وضع تحديد الموقع، نعامل الجولة كموقع فارغ بدلاً من منع الحفظ. */
     if(!sites.length) sites=[""];
 
     if(sites.filter(Boolean).length>1 && !currentUser.p.multi){
@@ -656,7 +656,7 @@ function editRound(id){
   if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية تعديل الجولات");
   let r=state.rounds.find(x=>x.id===id);if(!r)return;
   editRoundId=id;document.getElementById("rDate").value=r.date;document.getElementById("rType").value=r.type;document.getElementById("rTime").value=r.time||"";document.getElementById("rOfficerExtra").value=r.officerExtra||"";document.getElementById("rNotes").value=r.notes||"";document.getElementById("roundTitle").textContent="تعديل برنامج الجولة";
-  document.getElementById("sitePick").innerHTML=`<label style="display:block;margin-bottom:8px"><input type="checkbox" id="blankSiteBox" value="__BLANK__" ${!(r.sites||[]).filter(Boolean).length?"checked":""}> <b>بدون موقع لهذه الجولة — يترك الموقع فارغاً في البرنامج</b></label>`+SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}" ${(r.sites||[]).includes(s)?"checked":""}> ${esc(s)}</label>`).join("");
+  const hasRealSites=Array.isArray(r.sites)&&r.sites.some(Boolean);document.getElementById("sitePick").innerHTML=`<div class="site-mode" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><label class="site-mode-option" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:9px;background:#f8fafc;cursor:pointer"><input type="radio" name="siteMode" id="siteModeSelected" value="selected" ${hasRealSites?"checked":""}> <b>تحديد موقع</b></label><label class="site-mode-option" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:9px;background:#f8fafc;cursor:pointer"><input type="radio" name="siteMode" id="siteModeBlank" value="blank" ${hasRealSites?"":"checked"}> <b>بدون موقع</b></label></div><div id="siteChoices">`+SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}" ${(r.sites||[]).includes(s)?"checked":""}> ${esc(s)}</label>`).join("")+`</div><div class="muted" id="siteModeHint" style="margin-top:6px">اختر موقعاً أو أكثر لهذه الجولة، أو اختر «بدون موقع» لترك خانة الموقع فارغة.</div>`;
   document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}" ${(r.crew||[]).includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.spec)}${c.role?" — "+esc(c.role):""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";
   let selectedOfficers=Array.isArray(r.officers)?r.officers:[];if(!selectedOfficers.length&&r.officer){let parts=r.officer.split(/،|,/).map(x=>x.trim());selectedOfficers=state.crew.map((c,i)=>parts.includes(c.name)?i:-1).filter(i=>i>=0)}renderOfficerPick(selectedOfficers);renderAxisAssignments(r.assignments||{});bindSiteAssignmentRefresh(r.assignments||{});openModal("roundModal")
 }
