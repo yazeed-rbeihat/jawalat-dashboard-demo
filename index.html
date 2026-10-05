@@ -450,6 +450,19 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   #printSheet .person-card.leader, #printSheet .person-card.head { background:transparent !important; }
   #printSheet .ps-footer, #printSheet .report-legend, #printSheet .ps-note { display:none !important; }
 }
+<style id="v10-one-page-print">
+@media print {
+  @page { size: landscape; margin: 0 !important; }
+  html,body{width:100% !important;height:100% !important;min-height:0 !important;margin:0 !important;padding:0 !important;overflow:hidden !important;}
+  body > *{display:none !important;}
+  #printSheet.print-sheet{display:block !important;position:absolute !important;left:0 !important;top:0 !important;width:100% !important;height:100vh !important;max-height:100vh !important;overflow:hidden !important;margin:0 !important;padding:0 !important;page-break-after:avoid !important;break-after:avoid-page !important;}
+  #printSheet .ps-head{height:13vh !important;margin:0 0 .4vh !important;}
+  #printSheet .ps-info{height:6vh !important;margin:0 0 .4vh !important;}
+  #printSheet .ps-program{height:77vh !important;max-height:77vh !important;margin:0 !important;page-break-inside:avoid !important;break-inside:avoid !important;}
+  #printSheet .ps-program tr{height:auto !important;}
+  #printSheet .ps-footer{display:none !important;}
+} 
+</style>
 </style>
 </head>
 <body>
@@ -914,51 +927,133 @@ function buildProgramTable(sites,assignments){
     siteCols.map(()=>`<col class="site-col">`).join("");
   return `<table class="program-table ps-program"><colgroup>${widths}</colgroup><thead><tr><th class="num-head">م</th><th class="axis-head">المحور</th>${siteCols.map(c=>`<th class="site-head"><span class="site-label">الموقع</span><span class="site-name">${esc(c)}</span></th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
 }
-async function generateDirectPdf(reportHtml){
-  /* إنشاء PDF أفقي حقيقي مباشرةً، بدون الاعتماد على محرك الطباعة في Android.
-     يتم رسم التقرير داخل SVG/Canvas ثم تغليفه في PDF بقياس A4 أفقي. */
+async function generateDirectPdf(reportHtml, meta={}){
+  /* V10: إنشاء PDF مباشرة من Canvas. لا نستخدم SVG foreignObject ولا html2canvas
+     لأن بعض إصدارات Android/Chrome تفشل في تحويل HTML العربي إلى صورة. */
   try{
     const W=1600,H=1100;
-    const css=`
-      *{box-sizing:border-box}
-      html,body{margin:0;padding:0;width:1600px;height:1100px;background:#fff;color:#14202b;font-family:Tahoma,Arial,sans-serif;direction:rtl}
-      .pdf-sheet{width:1600px;height:1100px;padding:34px 42px;background:#fff;overflow:hidden}
-      .ps-head{height:118px;margin:0 0 10px;padding:12px 24px;border:2px solid #18364a;border-radius:12px;background:linear-gradient(90deg,#edf4f8,#fff,#edf4f8);text-align:center}
-      .ps-head h1{margin:0 0 8px;font-size:30px;line-height:1.05;font-weight:900}
-      .ps-head h2{margin:4px 0;font-size:18px;line-height:1.08;font-weight:800}
-      .ps-info{width:100%;height:58px;margin:0 0 10px;border:2px solid #18364a;border-collapse:collapse;table-layout:fixed;font-size:16px}
-      .ps-info th,.ps-info td{border:1px solid #536674;padding:5px;text-align:center;vertical-align:middle;line-height:1.05}
-      .ps-info th{background:#e5eef3;font-weight:900;width:12%}.ps-info td{font-weight:800;width:21%}
-      .ps-program{width:100%;height:820px;margin:0;border:2px solid #18364a;border-collapse:collapse;table-layout:fixed;font-size:13px}
-      .ps-program th,.ps-program td{border:1px solid #4d5e69;padding:5px 7px;vertical-align:middle;line-height:1.08;overflow:hidden}
-      .ps-program th{height:58px;background:#dce8ee;font-size:15px;font-weight:900;text-align:center}
-      .ps-program tr{height:50px}.ps-program .num-head,.ps-program td.row-no,.ps-program td:first-child{width:48px;text-align:center;font-weight:900}
-      .ps-program .axis-head,.ps-program td.axis-name{width:205px;background:#eef3f6;font-size:14px;font-weight:900;text-align:right}
-      .site-label{display:block;font-size:11px;font-weight:700;color:#61717d;margin-bottom:3px}.site-name{display:block;font-size:14px;line-height:1.08;font-weight:900}
-      .ps-program td:not(.axis-name):not(.row-no){text-align:right;background:#fff}.ps-program tbody tr:nth-child(even) td:not(.axis-name){background:#f8fafb}
-      .person-card{display:block;border-bottom:1px dotted #9aa7b0;padding:3px 0;margin:0;background:transparent;line-height:1.1;text-align:right;white-space:nowrap;overflow:hidden}
-      .person-card:last-child{border-bottom:0}.person-name{display:inline;font-size:13px;font-weight:900}.person-phone{display:inline;margin-right:8px;font-size:11px;font-weight:700;direction:ltr;unicode-bidi:embed}.person-card.leader{font-weight:900}.person-card.head{font-weight:900}
-    `;
-    const html=`<div xmlns="http://www.w3.org/1999/xhtml" class="pdf-sheet"><style>${css}</style>${reportHtml}</div>`;
-    const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><foreignObject x="0" y="0" width="${W}" height="${H}">${html}</foreignObject></svg>`;
-    const data='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-    const img=new Image();
-    img.onload=()=>{
-      try{
-        const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
-        const ctx=canvas.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.drawImage(img,0,0,W,H);
-        const jpeg=canvas.toDataURL('image/jpeg',0.94).split(',')[1];
-        const pdf=jpegToPdf(jpeg,W,H);
-        const blob=new Blob([pdf],{type:'application/pdf'});
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement('a'); a.href=url; a.download='برنامج_الجولة_أفقي.pdf'; document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(()=>URL.revokeObjectURL(url),15000);
-      }catch(e){console.error(e); alert('تعذر إنشاء ملف PDF مباشرة. سيتم فتح الطباعة كخيار احتياطي.'); printCleanDocument(reportHtml);}
-    };
-    img.onerror=()=>{alert('تعذر تجهيز التقرير كملف PDF. سيتم فتح الطباعة كخيار احتياطي.');printCleanDocument(reportHtml)};
-    img.src=data;
-  }catch(e){console.error(e);alert('حدث خطأ أثناء تجهيز PDF: '+(e?.message||e));printCleanDocument(reportHtml)}
+    const canvas=document.createElement('canvas');
+    canvas.width=W; canvas.height=H;
+    const ctx=canvas.getContext('2d',{alpha:false});
+    if(!ctx) throw new Error('Canvas غير متاح');
+    ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
+    ctx.direction='rtl'; ctx.textBaseline='middle';
+
+    const M=38, innerW=W-M*2;
+    const title=meta.title||('برنامج '+(meta.type||'')+' للجولة');
+    const type=meta.type||'معلن', date=meta.date||'', time=meta.time||'—';
+    const sites=(meta.sites&&meta.sites.length)?meta.sites:['بدون موقع'];
+    const assignments=meta.assignments||{};
+
+    // Header
+    ctx.strokeStyle='#18364a'; ctx.lineWidth=2; ctx.fillStyle='#f3f7fa';
+    roundRect(ctx,M,28,innerW,108,12,true,true);
+    ctx.fillStyle='#102c3d'; ctx.textAlign='center'; ctx.font='900 30px Tahoma, Arial, sans-serif';
+    ctx.fillText('مديرية الأمن العام',W/2,52);
+    ctx.font='800 18px Tahoma, Arial, sans-serif'; ctx.fillText('إدارة الرقابة والتقييم / مكتب المفتش العام',W/2,82);
+    ctx.font='800 17px Tahoma, Arial, sans-serif'; ctx.fillText(title,W/2,110);
+
+    // Info strip
+    const iy=145, ih=54;
+    ctx.fillStyle='#ffffff'; ctx.strokeStyle='#18364a'; ctx.lineWidth=2; ctx.fillRect(M,iy,innerW,ih); ctx.strokeRect(M,iy,innerW,ih);
+    const info=[['التاريخ',arabicDateFull(date)],['وقت الحركة',time],['نوع الجولة',type]];
+    let ix=M;
+    const iw=innerW/3;
+    for(const [lab,val] of info){
+      ctx.fillStyle='#e8eff4'; ctx.fillRect(ix,iy,iw*0.28,ih); ctx.strokeStyle='#52616d'; ctx.strokeRect(ix,iy,iw*0.28,ih);
+      ctx.fillStyle='#14202b'; ctx.font='900 15px Tahoma, Arial, sans-serif'; ctx.textAlign='center'; ctx.fillText(lab,ix+iw*.14,iy+ih/2);
+      ctx.fillStyle='#fff'; ctx.fillRect(ix+iw*.28,iy,iw*.72,ih); ctx.strokeRect(ix+iw*.28,iy,iw*.72,ih);
+      ctx.font='800 14px Tahoma, Arial, sans-serif'; ctx.fillText(val,ix+iw*.64,iy+ih/2);
+      ix+=iw;
+    }
+
+    // Table geometry
+    const ty=212, th=62, bottom=1058;
+    const rowH=(bottom-ty-th)/SPECS.length;
+    const numW=48, axisW=255;
+    const siteW=(innerW-numW-axisW)/sites.length;
+    const tableX=M;
+
+    // outer table/header
+    ctx.strokeStyle='#18364a'; ctx.lineWidth=2; ctx.strokeRect(tableX,ty,innerW,bottom-ty);
+    let x=tableX;
+    drawCell(ctx,x,ty,numW,th,'م', '#dce7ee', 15,'center'); x+=numW;
+    drawCell(ctx,x,ty,axisW,th,'المحور', '#dce7ee', 15,'center'); x+=axisW;
+    sites.forEach(site=>{drawCell(ctx,x,ty,siteW,th,'الموقع\n'+(site||'بدون موقع'), '#dce7ee', 14,'center');x+=siteW;});
+
+    for(let r=0;r<SPECS.length;r++){
+      const y=ty+th+r*rowH;
+      let cx=tableX;
+      drawCell(ctx,cx,y,numW,rowH,String(r+1),'#f1f5f7',13,'center'); cx+=numW;
+      drawCell(ctx,cx,y,axisW,rowH,SPECS[r],'#edf2f5',13,'right'); cx+=axisW;
+      // Determine merged cells by identical assignment signatures, matching the web report.
+      let i=0;
+      while(i<sites.length){
+        const site=sites[i];
+        const ids=peopleIdsFor(site,SPECS[r],assignments);
+        const sig=peopleSignature(ids);
+        let span=1;
+        while(i+span<sites.length && peopleSignature(peopleIdsFor(sites[i+span],SPECS[r],assignments))===sig) span++;
+        const w=siteW*span;
+        drawPeopleCell(ctx,cx,y,w,rowH,ids);
+        cx+=w; i+=span;
+      }
+    }
+
+    // Footer inside the same page
+    ctx.strokeStyle='#7b8790'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(M,1070); ctx.lineTo(W-M,1070); ctx.stroke();
+    ctx.fillStyle='#263746'; ctx.font='800 13px Tahoma, Arial, sans-serif'; ctx.textAlign='right'; ctx.fillText('رئيس الفريق: __________________',W-M,1086);
+    ctx.textAlign='left'; ctx.fillText('التوقيع: __________________',M,1086);
+
+    const jpeg=canvas.toDataURL('image/jpeg',0.94).split(',')[1];
+    const pdf=jpegToPdf(jpeg,W,H);
+    const blob=new Blob([pdf],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='برنامج_الجولة_أفقي.pdf';
+    a.style.display='none'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+    // Some Android WebViews ignore the download click; provide a visible fallback without an alert.
+    setTimeout(()=>{
+      const b=document.createElement('button');
+      b.textContent='فتح ملف PDF';
+      b.style.cssText='position:fixed;bottom:18px;right:18px;z-index:99999;padding:12px 18px;border:0;border-radius:12px;background:#16845a;color:#fff;font-weight:900;box-shadow:0 5px 20px #0004';
+      b.onclick=()=>{window.open(url,'_blank');b.remove()};
+      document.body.appendChild(b); setTimeout(()=>b.remove(),12000);
+    },250);
+  }catch(e){
+    console.error('direct PDF error',e);
+    alert('تعذر إنشاء ملف PDF مباشرة. سيتم فتح الطباعة كخيار احتياطي.');
+    printCleanDocument(reportHtml);
+  }
 }
+
+function roundRect(ctx,x,y,w,h,r,fill,stroke){
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  if(fill){ctx.fill();} if(stroke){ctx.stroke();}
+}
+function drawCell(ctx,x,y,w,h,text,bg,fontSize,align){
+  ctx.fillStyle=bg; ctx.fillRect(x,y,w,h); ctx.strokeStyle='#52616d'; ctx.lineWidth=1; ctx.strokeRect(x,y,w,h);
+  ctx.fillStyle='#14202b'; ctx.font=`900 ${fontSize}px Tahoma, Arial, sans-serif`; ctx.textAlign=align||'center';
+  const lines=String(text||'').split('\n'); const lh=fontSize*1.15; const start=y+h/2-(lines.length-1)*lh/2;
+  lines.forEach((line,i)=>ctx.fillText(line,align==='right'?x+w-10:align==='left'?x+10:x+w/2,start+i*lh));
+}
+function drawPeopleCell(ctx,x,y,w,h,ids){
+  ctx.fillStyle='#fff'; ctx.fillRect(x,y,w,h); ctx.strokeStyle='#52616d'; ctx.lineWidth=1; ctx.strokeRect(x,y,w,h);
+  const people=ids.map(id=>state.crew[id]).filter(Boolean);
+  if(!people.length){ctx.fillStyle='#596773';ctx.font='700 12px Tahoma,Arial,sans-serif';ctx.textAlign='center';ctx.fillText('—',x+w/2,y+h/2);return;}
+  const fs=people.length>2?11:12.5; const lh=fs+5; let yy=y+h/2-((people.length-1)*lh)/2;
+  for(const p of people){
+    ctx.fillStyle='#101820'; ctx.font=`900 ${fs}px Tahoma, Arial, sans-serif`; ctx.textAlign='right';
+    const name=((p.rank||'')+' '+(p.name||'')).trim();
+    const phone=p.phone?('  📞 '+p.phone):'';
+    let line=name+phone;
+    // Fit long Arabic names into the cell by shrinking the font, never by clipping the whole cell.
+    let f=fs; while(f>9 && ctx.measureText(line).width>w-16){f-=0.5;ctx.font=`900 ${f}px Tahoma, Arial, sans-serif`;}
+    ctx.fillText(line,x+w-8,yy); yy+=lh;
+  }
+}
+
 function jpegToPdf(base64,w,h){
   const bin=atob(base64);
   const imgBytes=new Uint8Array(bin.length);
@@ -1050,7 +1145,7 @@ function openDemoReport(){
   const r=DEMO_ROUND_FULL;
   const assignments=r.assignments||{};
   document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(r.type)} للجولة — نموذج ديمو مطوّر</h2><div class="muted" style="margin-top:6px">جميع الأسماء والبيانات في هذا التقرير افتراضية ولأغراض العرض فقط</div></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(r.date))}</td><th>وقت الحركة</th><td>${esc(r.time)}</td><th>نوع الجولة</th><td>${esc(r.type)}</td></tr></table>${buildProgramTable(r.sites,assignments)}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
-  generateDirectPdf(document.getElementById("printSheet").innerHTML);
+  generateDirectPdf(document.getElementById("printSheet").innerHTML,{title:`برنامج ${r.type} للجولة — نموذج ديمو مطوّر`,type:r.type,date:r.date,time:r.time,sites:r.sites,assignments:assignments});
 }
 
 function printCurrentRound(){
@@ -1065,7 +1160,7 @@ function printCurrentRound(){
   const hasAssignments=Object.values(assignments||{}).some(site=>Object.values(site||{}).some(ids=>Array.isArray(ids)&&ids.length));
   if(!hasAssignments && sites.length===DEMO_ROUND_FULL.sites.length && sites.every((x,i)=>x===DEMO_ROUND_FULL.sites[i])) assignments=DEMO_ASSIGNMENTS_BY_SITE;
   document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>مديرية الأمن العام</h1><h2>إدارة الرقابة والتقييم / مكتب المفتش العام</h2><h2>برنامج ${esc(type)} للجولة</h2></div><table class="ps-info"><tr><th>التاريخ</th><td>${esc(arabicDateFull(date))}</td><th>وقت الحركة</th><td>${esc(time)}</td><th>نوع الجولة</th><td>${esc(type)}</td></tr></table>${buildProgramTable(sites,assignments)}<div class="ps-footer"><span>رئيس الفريق: __________________</span><span>التوقيع: __________________</span></div>`;
-  generateDirectPdf(document.getElementById("printSheet").innerHTML);
+  generateDirectPdf(document.getElementById("printSheet").innerHTML,{title:`برنامج ${type} للجولة`,type,date,time,sites,assignments});
 }
 
 function openCrew(i=-1){editCrew=i;document.getElementById("cName").value=i<0?"":state.crew[i].name;document.getElementById("cRank").value=i<0?"":state.crew[i].rank;document.getElementById("cPhone").value=i<0?"":state.crew[i].phone||"";document.getElementById("cNotes").value=i<0?"":state.crew[i].notes||"";document.getElementById("cRole").value=i<0?"عضو":state.crew[i].role;document.getElementById("cSpec").innerHTML=SPECS.map(s=>`<option>${esc(s)}</option>`).join("");if(i>=0)document.getElementById("cSpec").value=state.crew[i].spec;openModal("crewModal")}
