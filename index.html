@@ -388,6 +388,41 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   line-height:1.25;
 }
 </style>
+
+<style id="v6-print-design">
+@media print {
+  @page { size: A4 landscape; margin: 4mm; }
+  html, body { width:297mm !important; min-width:297mm !important; height:210mm !important; margin:0 !important; padding:0 !important; background:#fff !important; overflow:hidden !important; }
+  body > * { display:none !important; }
+  #printSheet.print-sheet { display:block !important; width:289mm !important; height:202mm !important; min-height:202mm !important; max-height:202mm !important; margin:0 auto !important; padding:0 !important; box-sizing:border-box !important; font-family:Tahoma,Arial,sans-serif !important; direction:rtl !important; overflow:hidden !important; background:#fff !important; color:#101820 !important; }
+  #printSheet .ps-head { width:100% !important; height:25mm !important; margin:0 0 2mm !important; padding:3mm 6mm !important; border:1.5px solid #182b3a !important; border-radius:2mm !important; background:linear-gradient(90deg,#f3f7fa,#ffffff,#f3f7fa) !important; box-sizing:border-box !important; text-align:center !important; }
+  #printSheet .ps-head h1 { margin:0 0 1.2mm !important; font-size:17pt !important; line-height:1.05 !important; font-weight:900 !important; }
+  #printSheet .ps-head h2 { margin:.7mm 0 !important; font-size:10pt !important; line-height:1.1 !important; font-weight:800 !important; }
+  #printSheet .ps-info { width:100% !important; height:14mm !important; margin:0 0 2mm !important; border:1.5px solid #182b3a !important; border-collapse:collapse !important; table-layout:fixed !important; font-size:9.5pt !important; }
+  #printSheet .ps-info th,#printSheet .ps-info td { border:1px solid #52616d !important; padding:2mm 2.2mm !important; text-align:center !important; vertical-align:middle !important; line-height:1.05 !important; }
+  #printSheet .ps-info th { background:#e8eff4 !important; font-weight:900 !important; width:12% !important; }
+  #printSheet .ps-info td { font-weight:800 !important; width:21% !important; }
+  #printSheet .ps-program { width:100% !important; height:auto !important; margin:0 !important; border:1.8px solid #182b3a !important; border-collapse:collapse !important; table-layout:fixed !important; font-size:9pt !important; }
+  #printSheet .ps-program th,#printSheet .ps-program td { border:1px solid #43515b !important; padding:1.4mm 1.8mm !important; vertical-align:middle !important; line-height:1.12 !important; overflow:hidden !important; word-break:normal !important; }
+  #printSheet .ps-program thead { display:table-header-group !important; }
+  #printSheet .ps-program tr { height:10.3mm !important; page-break-inside:avoid !important; break-inside:avoid !important; }
+  #printSheet .ps-program th { height:13mm !important; background:#dce7ee !important; font-size:9.5pt !important; font-weight:900 !important; text-align:center !important; }
+  #printSheet .ps-program .num-head,#printSheet .ps-program td.row-no,#printSheet .ps-program td:first-child { width:8mm !important; text-align:center !important; font-weight:900 !important; }
+  #printSheet .ps-program .axis-head,#printSheet .ps-program td.axis-name { width:42mm !important; background:#edf2f5 !important; font-size:9.2pt !important; font-weight:900 !important; text-align:right !important; }
+  #printSheet .ps-program .site-head { width:auto !important; text-align:center !important; }
+  #printSheet .site-label { display:block !important; font-size:7.5pt !important; font-weight:700 !important; margin-bottom:1mm !important; }
+  #printSheet .site-name { display:block !important; font-size:9.6pt !important; line-height:1.08 !important; font-weight:900 !important; }
+  #printSheet .ps-program td:not(.axis-name):not(.row-no) { text-align:right !important; background:#fff !important; }
+  #printSheet .ps-program tbody tr:nth-child(even) td:not(.axis-name) { background:#f8fafb !important; }
+  #printSheet .person-card { display:block !important; border:0 !important; border-bottom:1px dotted #9aa7b0 !important; border-radius:0 !important; padding:1mm 0 !important; margin:0 !important; background:transparent !important; line-height:1.12 !important; text-align:right !important; }
+  #printSheet .person-card:last-child { border-bottom:0 !important; }
+  #printSheet .person-card .person-name { display:inline !important; font-size:9pt !important; font-weight:900 !important; }
+  #printSheet .person-card .person-phone { display:inline !important; margin-right:3mm !important; font-size:8pt !important; font-weight:700 !important; direction:ltr !important; unicode-bidi:embed !important; }
+  #printSheet .person-card.leader { border:0 !important; background:transparent !important; }
+  #printSheet .person-card.head { border:0 !important; background:transparent !important; }
+  #printSheet .ps-footer { display:flex !important; height:8mm !important; margin-top:2mm !important; padding:0 3mm !important; align-items:center !important; justify-content:space-between !important; font-size:8.5pt !important; font-weight:800 !important; border-top:1px solid #7b8790 !important; }
+}
+</style>
 </head>
 <body>
 
