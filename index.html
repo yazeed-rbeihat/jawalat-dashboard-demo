@@ -487,6 +487,21 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   #printSheet .ps-footer{direction:rtl!important;text-align:right!important;font-size:10.5pt!important;font-weight:900!important;margin-top:3mm!important;padding-right:2mm!important;}
 }
 </style>
+
+<style id="v16-rtl-professional">
+@media print{
+  #printSheet{direction:rtl!important;text-align:right!important;}
+  #printSheet .ps-program{direction:rtl!important;unicode-bidi:embed!important;}
+  #printSheet .ps-program th,#printSheet .ps-program td{border:2px solid #253746!important;}
+  #printSheet .ps-program th:first-child,#printSheet .ps-program td:first-child{border-right:2px solid #253746!important;}
+  #printSheet .ps-program .axis-name{text-align:right!important;direction:rtl!important;}
+  #printSheet .ps-program .site-cell{text-align:right!important;direction:rtl!important;}
+  #printSheet .person-card{direction:rtl!important;text-align:right!important;unicode-bidi:plaintext!important;}
+  #printSheet .person-name{direction:rtl!important;unicode-bidi:plaintext!important;font-weight:900!important;}
+  #printSheet .person-phone{direction:ltr!important;unicode-bidi:isolate!important;}
+  #printSheet .ps-footer{direction:rtl!important;text-align:right!important;justify-content:flex-start!important;}
+}
+</style>
 </head>
 <body>
 
@@ -988,6 +1003,7 @@ async function generateDirectPdf(reportHtml, meta={}){
 
     const ty=188, th=60, bottom=1240;
     const rowH=(bottom-ty-th)/SPECS.length;
+    // RTL layout: from RIGHT to LEFT = number, axis, then sites.
     const numW=52, axisW=Math.min(280, innerW*.18), siteW=(innerW-numW-axisW)/sites.length;
     function pdfCell(x,y,w,h,text,bg='#fff',fs=15,align='center',bold=true){
       ctx.fillStyle=bg; ctx.fillRect(x,y,w,h); ctx.strokeStyle='#566771'; ctx.lineWidth=1.5; ctx.strokeRect(x,y,w,h);
@@ -995,37 +1011,58 @@ async function generateDirectPdf(reportHtml, meta={}){
       const lines=String(text||'').split('\n'); const lh=fs*1.15; const st=y+h/2-(lines.length-1)*lh/2;
       for(let i=0;i<lines.length;i++) ctx.fillText(lines[i],align==='right'?x+w-9:align==='left'?x+9:x+w/2,st+i*lh);
     }
-    pdfCell(M,ty,numW,th,'م','#dce8ef',16);
-    pdfCell(M+numW,ty,axisW,th,'المحور','#dce8ef',16);
-    let x=M+numW+axisW;
-    sites.forEach(site=>{pdfCell(x,ty,siteW,th,'الموقع\n'+(site||'بدون موقع'),'#dce8ef',15);x+=siteW;});
+    // Draw the columns explicitly from the RIGHT edge so Arabic reading order is preserved.
+    let xRight=M+innerW;
+    const numX=xRight-numW;
+    pdfCell(numX,ty,numW,th,'م','#dce8ef',16);
+    xRight=numX;
+    const axisX=xRight-axisW;
+    pdfCell(axisX,ty,axisW,th,'المحور','#dce8ef',16);
+    xRight=axisX;
+    // Site columns continue from right-to-left, exactly matching the Arabic report order.
+    for(let si=0;si<sites.length;si++){
+      const sx=xRight-siteW;
+      pdfCell(sx,ty,siteW,th,'الموقع\n'+(sites[si]||'بدون موقع'),'#dce8ef',15);
+      xRight=sx;
+    }
 
     for(let r=0;r<SPECS.length;r++){
-      const y=ty+th+r*rowH; x=M;
-      pdfCell(x,y,numW,rowH,String(r+1),'#f4f7f9',14); x+=numW;
-      pdfCell(x,y,axisW,rowH,SPECS[r],'#eef3f6',14,'right'); x+=axisW;
+      const y=ty+th+r*rowH;
+      let rx=M+innerW;
+      const rnX=rx-numW;
+      pdfCell(rnX,y,numW,rowH,String(r+1),'#f4f7f9',14);
+      rx=rnX;
+      const raX=rx-axisW;
+      pdfCell(raX,y,axisW,rowH,SPECS[r],'#eef3f6',14,'right');
+      rx=raX;
+      let x=rx;
       let i=0;
       while(i<sites.length){
         const ids=peopleIdsFor(sites[i],SPECS[r],assignments);
         const sig=peopleSignature(ids); let span=1;
         while(i+span<sites.length && peopleSignature(peopleIdsFor(sites[i+span],SPECS[r],assignments))===sig) span++;
         const w=siteW*span;
-        ctx.fillStyle='#fff'; ctx.fillRect(x,y,w,rowH); ctx.strokeStyle='#566771'; ctx.lineWidth=1.5; ctx.strokeRect(x,y,w,rowH);
+        const cellX=x-w;
+        ctx.fillStyle='#fff'; ctx.fillRect(cellX,y,w,rowH); ctx.strokeStyle='#253746'; ctx.lineWidth=2; ctx.strokeRect(cellX,y,w,rowH);
         const people=ids.map(id=>state.crew[id]).filter(Boolean);
-        if(!people.length){ctx.fillStyle='#687680';ctx.font='bold 13px Tahoma,Arial,sans-serif';ctx.textAlign='center';ctx.fillText('—',x+w/2,y+rowH/2);}
+        if(!people.length){ctx.fillStyle='#687680';ctx.font='bold 13px Tahoma,Arial,sans-serif';ctx.textAlign='center';ctx.direction='rtl';ctx.fillText('—',cellX+w/2,y+rowH/2);}
         else{
-          const fs=people.length>2?12.5:14; const lh=Math.max(22,fs+7); let yy=y+rowH/2-(people.length-1)*lh/2;
+          const fs=people.length>2?13:15; const lh=Math.max(23,fs+8); let yy=y+rowH/2-(people.length-1)*lh/2;
           for(const p of people){
-            let f=fs; const line=((p.rank||'')+' '+(p.name||'')).trim()+(p.phone?'   ☎ '+p.phone:'');
-            ctx.textAlign='right'; ctx.font='bold '+f+'px Tahoma,Arial,sans-serif';
+            let f=fs;
+            const line=((p.rank||'')+' '+(p.name||'')).trim()+(p.phone?' ('+p.phone+')':'');
+            ctx.direction='rtl'; ctx.textAlign='right'; ctx.font='bold '+f+'px Tahoma,Arial,sans-serif';
             while(f>9 && ctx.measureText(line).width>w-18){f-=.5;ctx.font='bold '+f+'px Tahoma,Arial,sans-serif';}
-            ctx.fillStyle='#111b22'; ctx.fillText(line,x+w-9,yy); yy+=lh;
+            ctx.fillStyle='#111b22'; ctx.fillText(line,cellX+w-10,yy); yy+=lh;
           }
         }
-        x+=w; i+=span;
+        x=cellX; i+=span;
       }
     }
 
+    // Official RTL footer
+    ctx.direction='rtl'; ctx.textAlign='right'; ctx.fillStyle='#17232c'; ctx.font='bold 17px Tahoma,Arial,sans-serif';
+    ctx.fillText('مدير إدارة الرقابة والتقييم',W-M,1254);
     // Create JPEG safely
     const dataUrl=canvas.toDataURL('image/jpeg',0.92);
     if(!dataUrl || dataUrl.indexOf('base64,')<0) throw new Error('Canvas export failed');
