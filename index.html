@@ -572,7 +572,7 @@ function saveRound(){
   let officers=[...document.querySelectorAll(".officerBox:checked")].map(x=>+x.value);
   let officerNames=selectedOfficerNames();
   let data={date:document.getElementById("rDate").value,type:document.getElementById("rType").value,time:document.getElementById("rTime").value,officer:officerNames.join("، "),officers,officerExtra:document.getElementById("rOfficerExtra").value,notes:document.getElementById("rNotes").value,sites,crew,assignments:readAxisAssignments()};
-  if(editRoundId){let idx=state.rounds.findIndex(x=>x.id===editRoundId);if(idx>=0)state.rounds[idx]={...state.rounds[idx],...data};}
+  if(editRoundId && editRoundId!==-1){let idx=state.rounds.findIndex(x=>x.id===editRoundId);if(idx>=0)state.rounds[idx]={...state.rounds[idx],...data};}
   else state.rounds.push({id:Date.now().toString(),...data});
   editRoundId=-1;save();closeModal("roundModal");renderAll();drawMaps()
 }
