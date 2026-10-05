@@ -539,7 +539,13 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
   #printSheet .person-phone{font-weight:700!important;font-size:8pt!important}
   #printSheet .ps-footer{display:block!important;direction:rtl!important;text-align:right!important;margin-top:2mm!important;padding:0!important;font-size:9pt!important;font-weight:900!important;border-top:1px solid #111!important}
 }
-</style></head>
+</style>
+<style id="v27-official-report-style">
+/* V27: official report only — no phone numbers, larger bold names, strong borders */
+#printSheet .person-phone{display:none!important;}
+#printSheet .person-name{font-weight:900!important;}
+</style>
+</head>
 <body>
 
 <div id="loginScreen" class="login-screen">
@@ -1014,7 +1020,7 @@ function jpegToPdfSafe(b64, imgW, imgH){
 }
 
 async function generateDirectPdf(reportHtml, meta={}){
-  /* V26 — مطابقة أدق للنموذج اليدوي الرسمي: أبيض/أسود، A4 أفقي،
+  /* V27 — مطابقة بصرية أقرب للنموذج اليدوي: أسماء أوضح، بدون أرقام هواتف، حدود غامقة، وتوقيع سفلي: أبيض/أسود، A4 أفقي،
      عنوان واحد، # والموقع يميناً، مجموعتا مواقع في الرأس، وتقسيمات أفقية داخل الصفوف. */
   try{
     const W=2480, H=1754, M=38;
@@ -1034,7 +1040,7 @@ async function generateDirectPdf(reportHtml, meta={}){
     function center(t,x,y,w,h,sz,b=true){font(sz,b);ctx.textAlign='center';ctx.fillText(String(t||''),x+w/2,y+h/2);}
     function right(t,x,y,w,sz,b=true){font(sz,b);ctx.textAlign='right';ctx.fillText(String(t||''),x+w-14,y);}
     function fit(t,max,sz=42,min=18,b=true){let f=sz;while(f>min){font(f,b);if(ctx.measureText(t).width<=max)break;f--;};return f;}
-    function person(id){const p=state.crew[id];if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}${p.phone?` (${clean(p.phone)})`:''}`.trim();}
+    function person(id){const p=state.crew[id];if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}`.trim();}
     function ids(site,spec){return (Array.isArray(meta.assignments?.[site]?.[spec])?meta.assignments[site][spec]:[]).map(Number).filter(id=>state.crew[id]);}
     function uniq(a){return [...new Set(a)];}
     function groupIds(g,spec){return uniq(g.flatMap(site=>ids(site,spec)));}
@@ -1047,9 +1053,9 @@ async function generateDirectPdf(reportHtml, meta={}){
     center(title,L,titleY,innerW,titleH,fit(title,innerW-54,48,29,true),true);
 
     /* main table */
-    const tableY=112,bottom=H-48,headerH=286;
+    const tableY=112,bottom=H-55,headerH=252;
     const bodyTop=tableY+headerH, bodyH=bottom-bodyTop;
-    const numW=82, axisW=450;
+    const numW=78, axisW=445;
     const siteAreaW=innerW-numW-axisW;
     const siteX=L, axisX=siteX+siteAreaW, numX=axisX+axisW;
     const half=siteAreaW/2;
@@ -1058,9 +1064,9 @@ async function generateDirectPdf(reportHtml, meta={}){
     const rightSites=sites.slice(0,cut), leftSites=sites.slice(cut);
 
     /* header: site groups are merged, exactly like the manual */
-    rect(numX,tableY,numW,headerH,4); center('#',numX,tableY,numW,headerH,36,true);
-    rect(axisX,tableY,axisW,headerH,4); center('الموقع',axisX,tableY,axisW,headerH,36,true);
-    function headerGroup(x,g){rect(x,tableY,half,headerH,4);const list=g.length?g:['—'];let fs=Math.min(36,Math.floor((headerH-24)/Math.max(1,list.length)));fs=Math.max(22,fs);while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v).width<=half-42))break;fs--;}const lh=Math.min(39,(headerH-22)/list.length);let y=tableY+headerH/2-(list.length-1)*lh/2;for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v,x+half/2,y);y+=lh;}}
+    rect(numX,tableY,numW,headerH,5); center('#',numX,tableY,numW,headerH,39,true);
+    rect(axisX,tableY,axisW,headerH,5); center('الموقع',axisX,tableY,axisW,headerH,39,true);
+    function headerGroup(x,g){rect(x,tableY,half,headerH,5);const list=g.length?g:['—'];let fs=Math.min(40,Math.floor((headerH-18)/Math.max(1,list.length)));fs=Math.max(24,fs);while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v).width<=half-42))break;fs--;}const lh=Math.min(42,(headerH-16)/list.length);let y=tableY+headerH/2-(list.length-1)*lh/2;for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v,x+half/2,y);y+=lh;}}
     headerGroup(siteX+half,rightSites); headerGroup(siteX,leftSites);
 
     /* Body rows — preserve the manual's strong black grid and merge cells when the
@@ -1068,16 +1074,16 @@ async function generateDirectPdf(reportHtml, meta={}){
     const rowH=bodyH/SPECS.length;
     for(let i=0;i<SPECS.length;i++){
       const spec=SPECS[i], y=bodyTop+i*rowH;
-      rect(numX,y,numW,rowH,2); center(ar(i+1),numX,y,numW,rowH,27,true);
-      rect(axisX,y,axisW,rowH,2); right(spec,axisX,y+rowH/2,axisW,29,true);
+      rect(numX,y,numW,rowH,4); center(ar(i+1),numX,y,numW,rowH,30,true);
+      rect(axisX,y,axisW,rowH,4); right(spec,axisX,y+rowH/2,axisW,32,true);
       const a=groupIds(rightSites,spec), b=groupIds(leftSites,spec);
       if(same(a,b)){
-        rect(siteX,y,siteAreaW,rowH,2);
+        rect(siteX,y,siteAreaW,rowH,4);
         const vals=a.map(person).filter(Boolean);
-        if(!vals.length){center('***',siteX,y,siteAreaW,rowH,27,true);}
+        if(!vals.length){center('***',siteX,y,siteAreaW,rowH,30,true);}
         else{
-          let fs=30; while(fs>17){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=siteAreaW-50))break;fs--;}
-          const lh=Math.min(34,Math.max(21,(rowH-8)/vals.length)); let yy=y+rowH/2-(vals.length-1)*lh/2;
+          let fs=35; while(fs>19){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=siteAreaW-50))break;fs--;}
+          const lh=Math.min(39,Math.max(24,(rowH-6)/vals.length)); let yy=y+rowH/2-(vals.length-1)*lh/2;
           vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,siteX+siteAreaW-18,yy);yy+=lh;});
         }
       }else{
@@ -1090,9 +1096,9 @@ async function generateDirectPdf(reportHtml, meta={}){
             const sig=ids(g[k],spec).join(','); let span=1;
             while(k+span<n && ids(g[k+span],spec).join(',')===sig) span++;
             const xx=x+(n-k-span)*cw; const ww=cw*span;
-            rect(xx,y,ww,rowH,2);
+            rect(xx,y,ww,rowH,4);
             const vals=ids(g[k],spec).map(person).filter(Boolean);
-            if(vals.length){let fs=29;while(fs>15){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=ww-28))break;fs--;}const lh=Math.min(32,Math.max(19,(rowH-6)/vals.length));let yy=y+rowH/2-(vals.length-1)*lh/2;vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,xx+ww-12,yy);yy+=lh;});}
+            if(vals.length){let fs=34;while(fs>18){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=ww-28))break;fs--;}const lh=Math.min(37,Math.max(23,(rowH-5)/vals.length));let yy=y+rowH/2-(vals.length-1)*lh/2;vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,xx+ww-12,yy);yy+=lh;});}
             k+=span;
           }
         }
@@ -1100,17 +1106,13 @@ async function generateDirectPdf(reportHtml, meta={}){
       }
     }
 
-    /* footer */
-    font(27,true);ctx.textAlign='right';ctx.fillText('مدير إدارة الرقابة والتقييم',R,bottom+26);
-    font(23,true);ctx.textAlign='left';ctx.fillText('التوقيع: ____________________',L,bottom+26);
-
     const dataUrl=c.toDataURL('image/jpeg',0.94);
     if(!window.jspdf?.jsPDF) throw new Error('تعذر تحميل محرك PDF؛ تحقق من اتصال الإنترنت ثم أعد المحاولة.');
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
     doc.addImage(dataUrl,'JPEG',0,0,297,210,undefined,'FAST');
     doc.save(`برنامج_${String(type).replace(/[^\u0600-\u06FF\w\- ]/g,'_')}_${String(date).replace(/[^0-9\u0660-\u0669\-]/g,'_')}.pdf`);
-  }catch(e){console.error('V26 PDF error',e);alert('تعذر إنشاء التقرير: '+(e?.message||e));}
+  }catch(e){console.error('V27 PDF error',e);alert('تعذر إنشاء التقرير: '+(e?.message||e));}
 }
 
 function printCleanDocument(reportHtml){
@@ -1154,7 +1156,7 @@ function dayName(date){const names=['الأحد','الاثنين','الثلاث�
 function openDemoReport(){
   const r=DEMO_ROUND_FULL;
   const assignments=r.assignments||{};
-  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>برنامج زيارات ${esc(r.type)} / مكتب المفتش العام ليوم ${esc(dayName(r.date))} الموافق ${esc(r.date)} م</h1></div>${buildProgramTable(r.sites,assignments)}<div class="ps-footer"><span>مدير إدارة الرقابة والتقييم: __________________</span></div>`;
+  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>برنامج زيارات ${esc(r.type)} / مكتب المفتش العام ليوم ${esc(dayName(r.date))} الموافق ${esc(r.date)} م</h1></div>${buildProgramTable(r.sites,assignments)}`;
   generateDirectPdf(document.getElementById("printSheet").innerHTML,{title:`برنامج ${r.type} للجولة — نموذج ديمو مطوّر`,type:r.type,date:r.date,time:r.time,sites:r.sites,assignments:assignments});
 }
 
@@ -1169,7 +1171,7 @@ function printCurrentRound(){
   // في الديمو: إذا لم تكن هناك تكليفات بعد، استخدم التوزيع التجريبي حتى تظهر النتيجة كاملة.
   const hasAssignments=Object.values(assignments||{}).some(site=>Object.values(site||{}).some(ids=>Array.isArray(ids)&&ids.length));
   if(!hasAssignments && sites.length===DEMO_ROUND_FULL.sites.length && sites.every((x,i)=>x===DEMO_ROUND_FULL.sites[i])) assignments=DEMO_ASSIGNMENTS_BY_SITE;
-  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>برنامج زيارات ${esc(type)} / مكتب المفتش العام ليوم ${esc(dayName(date))} الموافق ${esc(date)} م</h1></div>${buildProgramTable(sites,assignments)}<div class="ps-footer"><span>مدير إدارة الرقابة والتقييم: __________________</span></div>`;
+  document.getElementById("printSheet").innerHTML=`<div class="ps-head"><h1>برنامج زيارات ${esc(type)} / مكتب المفتش العام ليوم ${esc(dayName(date))} الموافق ${esc(date)} م</h1></div>${buildProgramTable(sites,assignments)}`;
   generateDirectPdf(document.getElementById("printSheet").innerHTML,{title:`برنامج ${type} للجولة`,type,date,time,sites,assignments});
 }
 
