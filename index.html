@@ -855,7 +855,14 @@ document.getElementById("donut").style.setProperty("--p1",(c[0]/n*100)+"%");docu
 let counts={};rs.forEach(x=>(x.sites||[]).forEach(s=>counts[s]=(counts[s]||0)+1));let top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10),mx=top[0]?.[1]||1;
 document.getElementById("siteBars").innerHTML=top.map(([s,v])=>`<div class="bar-row" onclick="showSite('${esc(s)}')" style="cursor:pointer"><b>${esc(s)}</b><div class="track"><div class="fill" style="width:${v/mx*100}%"></div></div><b>${v}</b></div>`).join("")||"<div class='muted'>لا توجد بيانات</div>";
 }
-function renderRounds(){let q=(document.getElementById("q")?.value||"").trim(),t=document.getElementById("typeFilter")?.value||"",st=document.getElementById("statusFilter")?.value||"",rs=state.rounds.filter(x=>(!q||(x.sites||[]).join(" ").includes(q))&&(!t||x.type===t)&&(!st||statusOf(x.date)===st));document.getElementById("rows").innerHTML=rs.map(x=>`<tr><td>${x.date}</td><td>${x.type}</td><td>${(x.sites||[]).map(esc).join("، ")}</td><td>${esc(x.officer||"—")}</td><td><span class="badge ${statusOf(x.date)==="منتهية"?"done":statusOf(x.date)==="اليوم"?"today":"up"}>${statusOf(x.date)}</span></td><td><button class="action secondary" onclick="editRound('${x.id}')">تعديل</button></td></tr>`).join("")||"<tr><td colspan='6'>لا توجد بيانات</td></tr>"}
+function printSavedRound(id){
+  const r=state.rounds.find(x=>String(x.id)===String(id));
+  if(!r)return alert("تعذر العثور على الجولة");
+  const assignments=r.assignments||{};
+  const sites=Array.isArray(r.sites)&&r.sites.length?r.sites:[""];
+  generateDirectPdf("",{type:r.type,date:r.date,time:r.time,sites,assignments});
+}
+function renderRounds(){let q=(document.getElementById("q")?.value||"").trim(),t=document.getElementById("typeFilter")?.value||"",st=document.getElementById("statusFilter")?.value||"",rs=state.rounds.filter(x=>(!q||(x.sites||[]).join(" ").includes(q))&&(!t||x.type===t)&&(!st||statusOf(x.date)===st));document.getElementById("rows").innerHTML=rs.map(x=>`<tr><td>${x.date}</td><td>${x.type}</td><td>${(x.sites||[]).map(esc).join("، ")}</td><td>${esc(x.officer||"—")}</td><td><span class="badge ${statusOf(x.date)==="منتهية"?"done":statusOf(x.date)==="اليوم"?"today":"up"}>${statusOf(x.date)}</span></td><td><button class="action secondary" onclick="editRound('${x.id}')">تعديل</button><button class="action secondary" onclick="printSavedRound('${x.id}')">PDF</button></td></tr>`).join("")||"<tr><td colspan='6'>لا توجد بيانات</td></tr>"}
 function renderCrew(){let q=(document.getElementById("crewSearch")?.value||"").toLowerCase(),f=document.getElementById("crewSpecFilter")?.value||"";document.getElementById("crewSpecFilter").innerHTML="<option value=''>كل التخصصات</option>"+SPECS.map(s=>`<option ${s===f?"selected":""}>${esc(s)}</option>`).join("");document.getElementById("crewRows").innerHTML=state.crew.filter(c=>(!q||(c.name+c.rank+c.spec).toLowerCase().includes(q))&&(!f||c.spec===f)).map((c,i)=>`<tr><td>${esc(c.name)}</td><td>${esc(c.rank)}</td><td>${esc(c.spec)}</td><td>${esc(c.role)}</td><td>${esc(c.phone||"")}</td><td><button class="action secondary" onclick="openCrew(${i})">تعديل</button></td></tr>`).join("")||"<tr><td colspan='6'>لا توجد بيانات</td></tr>"}
 function renderSpecs(){document.getElementById("specGrid").innerHTML=SPECS.map(s=>`<div class="user-card"><b>${esc(s)}</b><div class="muted">${state.crew.filter(c=>c.spec===s).length} عضو</div></div>`).join("")}
 function renderUsers(){document.getElementById("userCards").innerHTML=state.users.map((u,i)=>`<div class="user-card"><b>${esc(u.u)}</b><div>${esc(u.full)}</div><div class="muted">${esc(u.role)} — ${esc(u.job||"")}</div><div style="margin-top:8px;font-size:12px">الجولات: ${u.p.add?"✓":"—"} | عدة مواقع: ${u.p.multi?"✓":"—"} | الطاقم: ${u.p.crew?"✓":"—"} | المستخدمون: ${u.p.users?"✓":"—"}</div><div style="margin-top:8px"><button class="action secondary" onclick="openUser(${i})">تعديل</button></div></div>`).join("")}
@@ -1114,103 +1121,129 @@ function jpegToPdfSafe(b64, imgW, imgH){
 }
 
 async function generateDirectPdf(reportHtml, meta={}){
-  /* V30-ACTIVE: NO-PHONE-NO-SIGNATURE-LARGE-BOLD */
-  /* V29 — التقرير الرسمي: بدون هواتف وبدون توقيع، أسماء أكبر وأوضح، حدود غامقة جدًا، A4 أفقي،
-     عنوان واحد، # والموقع يميناً، مجموعتا مواقع في الرأس، وتقسيمات أفقية داخل الصفوف. */
+  /* V37-ACTIVE: PRINT-CANVAS-ONE-PAGE */
+  /* نبني التقرير على Canvas ثم نطبعه كصورة واحدة A4 أفقي.
+     هذا يلغي الاعتماد على jsPDF ويمنع ظهور صفحة بيضاء أو انقسام التقرير إلى صفحتين. */
   try{
-    const W=2480, H=1754, M=28;
+    const W=2480,H=1754,M=28;
     const c=document.createElement('canvas'); c.width=W; c.height=H;
     const ctx=c.getContext('2d'); if(!ctx) throw new Error('Canvas context unavailable');
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.strokeStyle='#111'; ctx.fillStyle='#111';
     ctx.textBaseline='middle'; ctx.direction='rtl';
-    const L=M,R=W-M,innerW=W-2*M;
+    const L=M,innerW=W-2*M;
     const clean=x=>String(x??'').trim();
     const ar=x=>String(x).replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[+d]);
     const dayNames=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-    const date=clean(meta.date), type=clean(meta.type||'معلن');
-    let day=''; try{const d=new Date(date+'T12:00:00'); if(!isNaN(d)) day=dayNames[d.getDay()]}catch(e){}
+    const date=clean(meta.date),type=clean(meta.type||'معلن');
+    let day=''; try{const d=new Date(date+'T12:00:00');if(!isNaN(d))day=dayNames[d.getDay()]}catch(e){}
     const dateText=ar(date.replaceAll('-','/'));
     function font(sz,b=true){ctx.font=`${b?'900':'400'} ${sz}px Tahoma, Arial, sans-serif`;ctx.fillStyle='#111';ctx.direction='rtl';}
-    function rect(x,y,w,h,lw=3){ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);ctx.strokeStyle='#111';ctx.lineWidth=lw;ctx.strokeRect(x,y,w,h);}
+    function rect(x,y,w,h,lw=5){ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);ctx.strokeStyle='#111';ctx.lineWidth=lw;ctx.strokeRect(x,y,w,h);}
     function center(t,x,y,w,h,sz,b=true){font(sz,b);ctx.textAlign='center';ctx.fillText(String(t||''),x+w/2,y+h/2);}
-    function right(t,x,y,w,sz,b=true){font(sz,b);ctx.textAlign='right';ctx.fillText(String(t||''),x+w-14,y);}
-    function fit(t,max,sz=42,min=18,b=true){let f=sz;while(f>min){font(f,b);if(ctx.measureText(t).width<=max)break;f--;};return f;}
-    function person(id){const ref=normalizeCrewRef(id);const p=state.crew.find(c=>String(c.id)===String(ref)) || (typeof id==='number'?state.crew[id]:null);if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}`.trim();}
-    function ids(site,spec){return (Array.isArray(meta.assignments?.[site]?.[spec])?meta.assignments[site][spec]:[]).map(normalizeCrewRef).filter(Boolean);}
+    function fit(t,max,sz=48,min=20,b=true){let f=sz;while(f>min){font(f,b);if(ctx.measureText(t).width<=max)break;f--;}return f;}
+    function person(id){
+      const ref=normalizeCrewRef(id);
+      const p=state.crew.find(c=>String(c.id)===String(ref)) || (typeof id==='number'?state.crew[id]:null);
+      if(!p)return '';
+      return `${clean(p.rank)} ${clean(p.name)}`.trim();
+    }
+    function ids(site,spec){
+      return (Array.isArray(meta.assignments?.[site]?.[spec])?meta.assignments[site][spec]:[])
+        .map(normalizeCrewRef).filter(Boolean);
+    }
     function uniq(a){return [...new Set(a)];}
     function groupIds(g,spec){return uniq(g.flatMap(site=>ids(site,spec)));}
     function same(a,b){return a.join(',')===b.join(',');}
 
-    /* title */
     const titleY=10,titleH=92;
     rect(L,titleY,innerW,titleH,6);
     const title=`برنامج زيارات ${type} / مكتب المفتش العام ليوم ${day||'—'} الموافق ${dateText} م`;
-    center(title,L,titleY,innerW,titleH,fit(title,innerW-54,48,29,true),true);
+    center(title,L,titleY,innerW,titleH,fit(title,innerW-54,50,28,true),true);
 
-    /* main table */
-    const tableY=108,bottom=H-20,headerH=275;
-    const bodyTop=tableY+headerH, bodyH=bottom-bodyTop;
-    const numW=82, axisW=430;
-    const siteAreaW=innerW-numW-axisW;
-    const siteX=L, axisX=siteX+siteAreaW, numX=axisX+axisW;
-    const half=siteAreaW/2;
+    const tableY=108,bottom=H-18,headerH=275;
+    const bodyTop=tableY+headerH,bodyH=bottom-bodyTop;
+    const numW=82,axisW=430,siteAreaW=innerW-numW-axisW;
+    const siteX=L,axisX=siteX+siteAreaW,numX=axisX+axisW,half=siteAreaW/2;
     const rawSites=Array.isArray(meta.sites)?meta.sites:[];
-    const sites=rawSites.length?rawSites:[""];
+    const sites=rawSites.length?rawSites:[''];
     const cut=Math.ceil(sites.length/2);
-    const rightSites=sites.slice(0,cut), leftSites=sites.slice(cut);
+    const rightSites=sites.slice(0,cut),leftSites=sites.slice(cut);
 
-    /* header: site groups are merged, exactly like the manual */
-    rect(numX,tableY,numW,headerH,6); center('#',numX,tableY,numW,headerH,42,true);
-    rect(axisX,tableY,axisW,headerH,6); center('الموقع',axisX,tableY,axisW,headerH,42,true);
-    function headerGroup(x,g){rect(x,tableY,half,headerH,6);const list=g.length?g:[''];let fs=Math.min(46,Math.floor((headerH-18)/Math.max(1,list.length)));fs=Math.max(24,fs);while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v).width<=half-42))break;fs--;}const lh=Math.min(42,(headerH-16)/list.length);let y=tableY+headerH/2-(list.length-1)*lh/2;for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v||'بدون موقع',x+half/2,y);y+=lh;}}
-    headerGroup(siteX+half,rightSites); headerGroup(siteX,leftSites);
+    rect(numX,tableY,numW,headerH,6);center('#',numX,tableY,numW,headerH,42,true);
+    rect(axisX,tableY,axisW,headerH,6);center('الموقع',axisX,tableY,axisW,headerH,42,true);
+    function headerGroup(x,g){
+      rect(x,tableY,half,headerH,6);
+      const list=g.length?g:['بدون موقع'];
+      let fs=Math.min(46,Math.floor((headerH-18)/Math.max(1,list.length)));fs=Math.max(24,fs);
+      while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v||'بدون موقع').width<=half-42))break;fs--;}
+      const lh=Math.min(42,(headerH-16)/list.length);
+      let y=tableY+headerH/2-(list.length-1)*lh/2;
+      for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v||'بدون موقع',x+half/2,y);y+=lh;}
+    }
+    headerGroup(siteX+half,rightSites);headerGroup(siteX,leftSites);
 
-    /* Body rows — preserve the manual's strong black grid and merge cells when the
-       same assignment repeats across adjacent site groups. Row heights are compact. */
     const rowH=bodyH/SPECS.length;
     for(let i=0;i<SPECS.length;i++){
-      const spec=SPECS[i], y=bodyTop+i*rowH;
-      rect(numX,y,numW,rowH,6); center(ar(i+1),numX,y,numW,rowH,34,true);
-      rect(axisX,y,axisW,rowH,6); right(spec,axisX,y+rowH/2,axisW,35,true);
-      const a=groupIds(rightSites,spec), b=groupIds(leftSites,spec);
+      const spec=SPECS[i],y=bodyTop+i*rowH;
+      rect(numX,y,numW,rowH,5);center(ar(i+1),numX,y,numW,rowH,34,true);
+      rect(axisX,y,axisW,rowH,5);
+      font(35,true);ctx.textAlign='right';ctx.fillText(spec,axisX+axisW-14,y+rowH/2);
+      const a=groupIds(rightSites,spec),b=groupIds(leftSites,spec);
       if(same(a,b)){
-        rect(siteX,y,siteAreaW,rowH,6);
+        rect(siteX,y,siteAreaW,rowH,5);
         const vals=a.map(person).filter(Boolean);
         if(!vals.length){center('***',siteX,y,siteAreaW,rowH,30,true);}
         else{
-          let fs=44; while(fs>22){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=siteAreaW-50))break;fs--;}
-          const lh=Math.min(39,Math.max(24,(rowH-6)/vals.length)); let yy=y+rowH/2-(vals.length-1)*lh/2;
+          let fs=44;while(fs>22){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=siteAreaW-50))break;fs--;}
+          const lh=Math.min(40,Math.max(25,(rowH-6)/vals.length));
+          let yy=y+rowH/2-(vals.length-1)*lh/2;
           vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,siteX+siteAreaW-16,yy);yy+=lh;});
         }
       }else{
-        /* split each half into as many visual cells as there are sites in that half,
-           then merge adjacent cells having the same assignment signature. */
         function drawGroup(x,g){
-          const n=Math.max(1,g.length), cw=half/n;
-          let k=0;
+          const n=Math.max(1,g.length),cw=half/n;let k=0;
           while(k<n){
-            const sig=ids(g[k],spec).join(','); let span=1;
-            while(k+span<n && ids(g[k+span],spec).join(',')===sig) span++;
-            const xx=x+(n-k-span)*cw; const ww=cw*span;
-            rect(xx,y,ww,rowH,6);
+            const sig=ids(g[k],spec).join(',');let span=1;
+            while(k+span<n && ids(g[k+span],spec).join(',')===sig)span++;
+            const xx=x+(n-k-span)*cw,ww=cw*span;rect(xx,y,ww,rowH,5);
             const vals=ids(g[k],spec).map(person).filter(Boolean);
-            if(vals.length){let fs=42;while(fs>21){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=ww-28))break;fs--;}const lh=Math.min(37,Math.max(23,(rowH-5)/vals.length));let yy=y+rowH/2-(vals.length-1)*lh/2;vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,xx+ww-10,yy);yy+=lh;});}
+            if(vals.length){
+              let fs=42;while(fs>20){font(fs,true);if(vals.every(v=>ctx.measureText(v).width<=ww-28))break;fs--;}
+              const lh=Math.min(38,Math.max(23,(rowH-5)/vals.length));let yy=y+rowH/2-(vals.length-1)*lh/2;
+              vals.forEach(v=>{font(fs,true);ctx.textAlign='right';ctx.fillText(v,xx+ww-10,yy);yy+=lh;});
+            }else{center('***',xx,y,ww,rowH,28,true);}
             k+=span;
           }
         }
-        drawGroup(siteX+half,rightSites); drawGroup(siteX,leftSites);
+        drawGroup(siteX+half,rightSites);drawGroup(siteX,leftSites);
       }
     }
 
-    const dataUrl=c.toDataURL('image/jpeg',0.94);
-    if(!window.jspdf?.jsPDF) throw new Error('تعذر تحميل محرك PDF؛ تحقق من اتصال الإنترنت ثم أعد المحاولة.');
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
-    doc.addImage(dataUrl,'JPEG',0,0,297,210,undefined,'FAST');
-    doc.save(`برنامج_${String(type).replace(/[^\u0600-\u06FF\w\- ]/g,'_')}_${String(date).replace(/[^0-9\u0660-\u0669\-]/g,'_')}.pdf`);
-  }catch(e){console.error('V27 PDF error',e);alert('تعذر إنشاء التقرير: '+(e?.message||e));}
+    const dataUrl=c.toDataURL('image/png');
+    const sheet=document.getElementById('printSheet');
+    if(!sheet)throw new Error('تعذر العثور على صفحة التقرير');
+    sheet.innerHTML=`<img id="directReportImage" src="${dataUrl}" alt="برنامج الجولة">`;
+    sheet.style.display='block';
+    const oldTitle=document.title;document.title=`برنامج_${type}_${date}`;
+    let style=document.getElementById('directReportPrintStyle');
+    if(!style){style=document.createElement('style');style.id='directReportPrintStyle';document.head.appendChild(style);}
+    style.textContent=`
+      @page{size:A4 landscape;margin:0}
+      @media print{
+        html,body{margin:0!important;padding:0!important;background:#fff!important;width:297mm!important;height:210mm!important;overflow:hidden!important}
+        body>*{display:none!important}
+        #printSheet{display:block!important;width:297mm!important;height:210mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
+        #directReportImage{display:block!important;width:297mm!important;height:210mm!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important}
+      }
+      @media screen{#directReportImage{display:block;width:min(100%,1120px);height:auto;margin:auto;background:#fff}}
+    `;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      try{window.print();}
+      catch(e){console.error('print error',e);alert('تعذر فتح الطباعة: '+(e?.message||e));}
+      finally{setTimeout(()=>{sheet.style.display='';document.title=oldTitle;},1200);}
+    }));
+  }catch(e){console.error('V37 PDF error',e);alert('تعذر إنشاء التقرير: '+(e?.message||e));}
 }
-
 function printCleanDocument(reportHtml){
   /* الطباعة المباشرة داخل نفس الصفحة: أكثر ثباتاً على Android/Chrome
      ولا تعتمد على window.open أو نافذة منبثقة قد يمنعها المتصفح. */
