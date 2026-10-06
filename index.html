@@ -786,11 +786,19 @@ let state=(storedState&&Array.isArray(storedState.rounds)&&storedState.rounds.le
 state.users=(Array.isArray(state.users)?state.users:[]).map(u=>({u:String(u?.u||""),full:String(u?.full||u?.u||"مستخدم"),pass:String(u?.pass||""),job:String(u?.job||""),role:String(u?.role||"مستخدم"),p:{add:true,multi:false,crew:false,users:false,reports:true,map:true,...(u?.p||{})}})).filter(u=>u.u&&u.pass);
 if(!state.users.some(u=>u.u==="admin")){state.users.unshift(DEFAULT_USERS[0]);}
 /* V34 stable IDs: keep each crew member linked to the PDF selection */
+function stableCrewId(c,i){
+  const raw=`${c?.rank||""}|${c?.name||""}|${c?.phone||""}|${c?.specialty||c?.spec||""}`.trim();
+  let h=2166136261;
+  for(let k=0;k<raw.length;k++){h^=raw.charCodeAt(k);h=Math.imul(h,16777619);}
+  return `CREW-${String(i+1).padStart(4,"0")}-${(h>>>0).toString(36)}`;
+}
 function ensureCrewIds(){
+  let changed=false;
   state.crew=(state.crew||[]).map((c,i)=>{
-    if(!c.id)c.id=`CREW-${String(i+1).padStart(4,"0")}-${Math.random().toString(36).slice(2,8)}`;
+    if(!c.id){c={...c,id:stableCrewId(c,i)};changed=true;}
     return c;
   });
+  if(changed){try{save()}catch(e){}}
 }
 function normalizeCrewRef(ref){
   if(ref===null||ref===undefined||ref==="")return null;
@@ -1127,7 +1135,7 @@ async function generateDirectPdf(reportHtml, meta={}){
     function center(t,x,y,w,h,sz,b=true){font(sz,b);ctx.textAlign='center';ctx.fillText(String(t||''),x+w/2,y+h/2);}
     function right(t,x,y,w,sz,b=true){font(sz,b);ctx.textAlign='right';ctx.fillText(String(t||''),x+w-14,y);}
     function fit(t,max,sz=42,min=18,b=true){let f=sz;while(f>min){font(f,b);if(ctx.measureText(t).width<=max)break;f--;};return f;}
-    function person(id){const ref=normalizeCrewRef(id);const p=state.crew.find(c=>String(c.id)===String(ref));if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}`.trim();}
+    function person(id){const ref=normalizeCrewRef(id);const p=state.crew.find(c=>String(c.id)===String(ref)) || (typeof id==='number'?state.crew[id]:null);if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}`.trim();}
     function ids(site,spec){return (Array.isArray(meta.assignments?.[site]?.[spec])?meta.assignments[site][spec]:[]).map(normalizeCrewRef).filter(Boolean);}
     function uniq(a){return [...new Set(a)];}
     function groupIds(g,spec){return uniq(g.flatMap(site=>ids(site,spec)));}
@@ -1146,14 +1154,15 @@ async function generateDirectPdf(reportHtml, meta={}){
     const siteAreaW=innerW-numW-axisW;
     const siteX=L, axisX=siteX+siteAreaW, numX=axisX+axisW;
     const half=siteAreaW/2;
-    const sites=(meta.sites||[]).filter(Boolean);
+    const rawSites=Array.isArray(meta.sites)?meta.sites:[];
+    const sites=rawSites.length?rawSites:[""];
     const cut=Math.ceil(sites.length/2);
     const rightSites=sites.slice(0,cut), leftSites=sites.slice(cut);
 
     /* header: site groups are merged, exactly like the manual */
     rect(numX,tableY,numW,headerH,6); center('#',numX,tableY,numW,headerH,42,true);
     rect(axisX,tableY,axisW,headerH,6); center('الموقع',axisX,tableY,axisW,headerH,42,true);
-    function headerGroup(x,g){rect(x,tableY,half,headerH,6);const list=g.length?g:['—'];let fs=Math.min(46,Math.floor((headerH-18)/Math.max(1,list.length)));fs=Math.max(24,fs);while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v).width<=half-42))break;fs--;}const lh=Math.min(42,(headerH-16)/list.length);let y=tableY+headerH/2-(list.length-1)*lh/2;for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v,x+half/2,y);y+=lh;}}
+    function headerGroup(x,g){rect(x,tableY,half,headerH,6);const list=g.length?g:[''];let fs=Math.min(46,Math.floor((headerH-18)/Math.max(1,list.length)));fs=Math.max(24,fs);while(fs>17){font(fs,true);if(list.every(v=>ctx.measureText(v).width<=half-42))break;fs--;}const lh=Math.min(42,(headerH-16)/list.length);let y=tableY+headerH/2-(list.length-1)*lh/2;for(const v of list){font(fs,true);ctx.textAlign='center';ctx.fillText(v||'بدون موقع',x+half/2,y);y+=lh;}}
     headerGroup(siteX+half,rightSites); headerGroup(siteX,leftSites);
 
     /* Body rows — preserve the manual's strong black grid and merge cells when the
