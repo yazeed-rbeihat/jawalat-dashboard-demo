@@ -544,6 +544,22 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 /* V30: official report only — no phone numbers/signature, larger bold names, extra-strong borders */
 #printSheet .person-phone{display:none!important;}
 #printSheet .person-name{font-weight:900!important;}
+
+/* V31 — اختيار الطاقم حسب المحور */
+.axis-picker{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.axis-pick-card{border:1.5px solid #cbd7e1;border-radius:12px;background:#fff;padding:11px}
+.axis-pick-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid #e6edf2;padding-bottom:8px;margin-bottom:8px}
+.axis-pick-title{font-weight:900;color:#17324d;font-size:15px}
+.axis-pick-count{font-size:11px;color:#718293}
+.axis-people{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.axis-person-option{display:flex;align-items:center;gap:8px;border:1px solid #e0e7ed;border-radius:9px;padding:9px;background:#f8fafc;cursor:pointer}
+.axis-person-option:hover{border-color:#1976d2;background:#f1f7fc}
+.axis-person-option input{width:18px;height:18px;accent-color:#1976d2}
+.axis-person-name{font-weight:800}.axis-person-meta{display:block;color:#718293;font-size:11px;margin-top:2px}
+.axis-empty{padding:10px;border:1px dashed #b9c7d3;border-radius:9px;color:#718293;text-align:center}
+.axis-add{padding:7px 10px;border:1px solid #1976d2;background:#eef6ff;color:#1264a3;border-radius:8px;font-weight:800}
+.crew-tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+@media(max-width:700px){.axis-people{grid-template-columns:1fr}.axis-pick-title{font-size:14px}}
 </style>
 </head>
 <body>
@@ -605,7 +621,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 </section>
 
 <section id="crew" style="margin-top:18px"><div class="panel">
-<div class="section-title"><div><h2>طاقم الجولة</h2><div class="muted">يمكن تعيين رئيس فريق مع تخصص في الوقت نفسه.</div></div><button class="action" onclick="openCrew()">+ إضافة عضو</button></div>
+<div class="section-title"><div><h2>طاقم الجولة</h2><div class="muted">قاعدة أعضاء الطاقم موزعة حسب المحاور. عند إنشاء الجولة تختار الأشخاص من داخل كل محور.</div></div><div class="crew-tools"><button class="action" onclick="openCrew()">+ إضافة عضو</button><button class="action secondary" onclick="importCrewExcel()">استيراد طاقم Excel</button><button class="action secondary" onclick="downloadCrewTemplate()">نموذج Excel للطاقم</button></div></div>
 <div class="filters"><input id="crewSearch" placeholder="بحث..." oninput="renderCrew()"><select id="crewSpecFilter" onchange="renderCrew()"><option value="">كل التخصصات</option></select></div>
 <div class="table-wrap"><table><thead><tr><th>الاسم</th><th>الرتبة</th><th>التخصص</th><th>صفة الطاقم</th><th>الهاتف</th><th>إجراء</th></tr></thead><tbody id="crewRows"></tbody></table></div>
 </div></section>
@@ -677,8 +693,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 <label class="full">معنيون إضافيون<textarea id="rOfficerExtra" rows="2" placeholder="أسماء إضافية غير موجودة في طاقم الجولة، افصل بين الأسماء بفاصلة"></textarea></label>
 <label class="full">ملاحظات<textarea id="rNotes" rows="2"></textarea></label>
 <div class="full"><b>المواقع — يسمح باختيار أكثر من موقع</b><div class="muted">يمكن اختيار أكثر من موقع للجولة حسب الصلاحية.</div><div class="site-pick" id="sitePick"></div></div>
-<div class="full"><b>المحاور والمعنيون</b><div class="muted">لكل محور يمكن اختيار أكثر من معني. سيظهر الناتج في جدول البرنامج عند الطباعة بنفس ترتيب نموذج المرفق.</div><div id="axisAssignments" class="axis-assignments"></div></div>
-<div class="full"><b>طاقم الجولة</b><div class="crew-pick" id="crewPick"></div></div>
+<div class="full"><b>اختيار أفراد الجولة حسب المحور</b><div class="muted">كل محور يعرض الأشخاص المسجلين تحته فقط. اختر الشخص/الأشخاص المطلوبين، ويمكن إضافة شخص جديد مباشرة من زر «إضافة شخص» داخل المحور.</div><div id="axisAssignments" class="axis-picker"></div></div>
 </div></div>
 <div class="dialog-actions"><button class="action success" onclick="saveRound()">حفظ الجولة</button><button class="action secondary" onclick="printCurrentRound()">طباعة / حفظ PDF</button><button class="action secondary" onclick="closeModal('roundModal')">إلغاء</button></div>
 </div></div>
@@ -759,7 +774,7 @@ let state=(storedState&&Array.isArray(storedState.rounds)&&storedState.rounds.le
 state.users=(Array.isArray(state.users)?state.users:[]).map(u=>({u:String(u?.u||""),full:String(u?.full||u?.u||"مستخدم"),pass:String(u?.pass||""),job:String(u?.job||""),role:String(u?.role||"مستخدم"),p:{add:true,multi:false,crew:false,users:false,reports:true,map:true,...(u?.p||{})}})).filter(u=>u.u&&u.pass);
 if(!state.users.some(u=>u.u==="admin")){state.users.unshift(DEFAULT_USERS[0]);}
 if(!storedState||!Array.isArray(storedState.rounds)||!storedState.rounds.length){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
-let editCrew=-1, editUser=-1, map1,map2, currentUser=null;
+let editCrew=-1, editUser=-1, map1,map2, currentUser=null, pendingAxisSpec="", pendingAxisRole="";
 function login(){
   const u=(document.getElementById("loginUser")?.value||"").trim();
   const p=document.getElementById("loginPass")?.value||"";
@@ -828,7 +843,14 @@ function drawMaps(){
     }));
   }catch(e){console.warn('drawMaps skipped:',e)}
 }
-function crewOptions(selected=[],spec=""){return state.crew.map((c,i)=>{if(spec==="قائد الفريق" && c.role!=="قائد فريق")return "";if(spec==="رئيس الفريق" && c.role!=="رئيس فريق")return "";if(spec!=="قائد الفريق" && c.role==="قائد فريق")return "";return `<option value="${i}" ${selected.includes(i)?"selected":""}>${esc(c.name)} — ${esc(c.rank||"")}${c.role?" — "+esc(c.role):""}${c.phone?" — "+esc(c.phone):""}</option>`}).join("")}
+function axisCandidates(spec){
+  return state.crew.map((c,i)=>({c,i})).filter(({c})=>{
+    if(spec==="قائد الفريق") return c.role==="قائد فريق";
+    if(spec==="رئيس الفريق") return c.role==="رئيس فريق";
+    if(c.role==="قائد فريق") return false;
+    return String(c.spec||"")===spec;
+  });
+}
 function renderOfficerPick(selected=[]){document.getElementById("officerPick").innerHTML=state.crew.length?state.crew.map((c,i)=>`<label><input type="checkbox" class="officerBox" value="${i}" ${selected.includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.rank||"")}</label>`).join(""):"<div class='muted'>أضف الضباط/أعضاء الطاقم أولاً من صفحة طاقم الجولة.</div>"}
 function normalizeAssignments(assignments={},sites=[]){
   if(!assignments||typeof assignments!=="object") return {};
@@ -838,26 +860,43 @@ function normalizeAssignments(assignments={},sites=[]){
   }
   return assignments;
 }
+function openCrewForAxis(spec){
+  if(!currentUser||!currentUser.p.crew)return alert("لا تملك صلاحية إضافة أفراد الطاقم");
+  pendingAxisSpec=spec;
+  pendingAxisRole=spec==="قائد الفريق"?"قائد فريق":(spec==="رئيس الفريق"?"رئيس فريق":"عضو");
+  openCrew(-1);
+  document.getElementById("cSpec").value=spec;
+  document.getElementById("cRole").value=pendingAxisRole;
+}
 function renderAxisAssignments(assignments={}){
   const box=document.getElementById("axisAssignments");
   const blank=document.getElementById("siteModeBlank");
   const sites=blank && blank.checked ? [""] : [...document.querySelectorAll(".siteBox:checked")].map(x=>x.value);
-  if(!sites.length){box.innerHTML='<div class="muted">اختر المواقع أولاً، ثم وزّع أكثر من شخص على كل محور عند الحاجة.</div>';return;}
+  if(!sites.length){box.innerHTML='<div class="axis-empty">اختر موقعاً أولاً، ثم ستظهر جميع المحاور وبداخل كل محور الأشخاص المسجلون عليه.</div>';return;}
   const norm=normalizeAssignments(assignments,sites);
   box.innerHTML=sites.map((site,si)=>{
     const sa=norm[site]||{};
-    return `<div class="site-axis-block"><div class="site-axis-title"><b>الموقع ${si+1}: ${esc(site)}</b><span class="muted">قائد الفريق مستقل، ورئيس الفريق يظهر هنا وفي محوره، ويمكن اختيار عدة أشخاص داخل كل محور</span></div>
-      ${SPECS.map((spec,i)=>{const selected=Array.isArray(sa[spec])?sa[spec]:[];return `<div class="axis-row"><div><b>${i+1}. ${esc(spec)}</b><small>أكثر من شخص مسموح</small></div><select class="axisBox" data-site="${esc(site)}" data-spec="${esc(spec)}" multiple size="3">${crewOptions(selected,spec)}</select></div>`}).join("")}
-    </div>`;
+    return `<div class="site-axis-block"><div class="site-axis-title"><b>الموقع ${si+1}: ${esc(site||"بدون موقع")}</b><span class="muted">اختيار الأشخاص يتم محوراً بمحور</span></div>
+      <div class="axis-picker">${SPECS.map((spec,i)=>{
+        const selected=Array.isArray(sa[spec])?sa[spec]:[];
+        const candidates=axisCandidates(spec);
+        const single=(spec==="قائد الفريق"||spec==="رئيس الفريق");
+        return `<div class="axis-pick-card"><div class="axis-pick-head"><div><span class="axis-pick-title">${i+1}. ${esc(spec)}</span><span class="axis-pick-count"> — ${candidates.length} شخص مسجل</span></div><button type="button" class="axis-add" onclick="openCrewForAxis('${esc(spec)}')">+ إضافة شخص</button></div><div class="axis-people">${candidates.length?candidates.map(({c,idx})=>{
+          const checked=selected.includes(idx)?"checked":"";
+          const input=single?`<input type="radio" name="axis_${si}_${i}" class="axisPick" data-site="${esc(site)}" data-spec="${esc(spec)}" value="${idx}" ${checked}>`:`<input type="checkbox" class="axisPick" data-site="${esc(site)}" data-spec="${esc(spec)}" value="${idx}" ${checked}>`;
+          return `<label class="axis-person-option">${input}<span><span class="axis-person-name">${esc(c.rank||"")} ${esc(c.name||"")}</span><span class="axis-person-meta">${esc(c.role||"عضو")}${c.phone?" — "+esc(c.phone):""}</span></span></label>`;
+        }).join(""):"<div class='axis-empty'>لا يوجد أشخاص مسجلون لهذا المحور. اضغط «إضافة شخص» لإدخال أول شخص.</div>"}</div></div>`;
+      }).join("")}</div></div>`;
   }).join("");
 }
 function readAxisAssignments(){
   let out={};
-  document.querySelectorAll(".axisBox").forEach(sel=>{
-    const site=sel.dataset.site,spec=sel.dataset.spec;
-    const vals=[...sel.selectedOptions].map(o=>+o.value);
-    if(!out[site]) out[site]={};
-    if(vals.length) out[site][spec]=vals;
+  document.querySelectorAll(".axisPick:checked").forEach(inp=>{
+    const site=inp.dataset.site,spec=inp.dataset.spec;
+    const val=+inp.value;
+    if(!out[site])out[site]={};
+    if(!out[site][spec])out[site][spec]=[];
+    if(!out[site][spec].includes(val))out[site][spec].push(val);
   });
   Object.keys(out).forEach(site=>{if(!Object.keys(out[site]).length)delete out[site]});
   return out;
@@ -886,7 +925,7 @@ function bindSiteAssignmentRefresh(existing={}){
   sync();
 }
 function selectedOfficerNames(){let names=[...document.querySelectorAll(".officerBox:checked")].map(x=>state.crew[+x.value]?.name).filter(Boolean);let extra=(document.getElementById("rOfficerExtra")?.value||"").split(/[,،\n]+/).map(x=>x.trim()).filter(Boolean);return [...names,...extra]}
-function addRound(){editRoundId=-1;if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");document.getElementById("rDate").value=today();document.getElementById("rType").value="معلن";document.getElementById("rTime").value="";document.getElementById("rOfficerExtra").value="";document.getElementById("rNotes").value="";document.getElementById("roundTitle").textContent="إضافة جولة / برنامج زيارة";document.getElementById("sitePick").innerHTML=`<div class="site-mode" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><label class="site-mode-option" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:9px;background:#f8fafc;cursor:pointer"><input type="radio" name="siteMode" id="siteModeSelected" value="selected" checked> <b>تحديد موقع</b></label><label class="site-mode-option" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:9px;background:#f8fafc;cursor:pointer"><input type="radio" name="siteMode" id="siteModeBlank" value="blank"> <b>بدون موقع</b></label></div><div id="siteChoices">`+SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}"> ${esc(s)}</label>`).join("")+`</div><div class="muted" id="siteModeHint" style="margin-top:6px">اختر موقعاً أو أكثر لهذه الجولة، أو اختر «بدون موقع» لترك خانة الموقع فارغة.</div>`;document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}"> ${esc(c.name)} — ${esc(c.spec)}${c.role?" — "+esc(c.role):""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";renderOfficerPick([]);renderAxisAssignments({});bindSiteAssignmentRefresh({});openModal("roundModal")}
+function addRound(){editRoundId=-1;if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");document.getElementById("rDate").value=today();document.getElementById("rType").value="معلن";document.getElementById("rTime").value="";document.getElementById("rOfficerExtra").value="";document.getElementById("rNotes").value="";document.getElementById("roundTitle").textContent="إضافة جولة / برنامج زيارة";document.getElementById("sitePick").innerHTML=`<div class="site-mode" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><label class="site-mode-option" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:9px;background:#f8fafc;cursor:pointer"><input type="radio" name="siteMode" id="siteModeSelected" value="selected" checked> <b>تحديد موقع</b></label><label class="site-mode-option" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:9px;background:#f8fafc;cursor:pointer"><input type="radio" name="siteMode" id="siteModeBlank" value="blank"> <b>بدون موقع</b></label></div><div id="siteChoices">`+SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}"> ${esc(s)}</label>`).join("")+`</div><div class="muted" id="siteModeHint" style="margin-top:6px">اختر موقعاً أو أكثر لهذه الجولة، أو اختر «بدون موقع» لترك خانة الموقع فارغة.</div>`;renderOfficerPick([]);renderAxisAssignments({});bindSiteAssignmentRefresh({});openModal("roundModal")}
 function saveRound(){
   try{
     if(!currentUser || !currentUser.p || !currentUser.p.add){
@@ -905,7 +944,7 @@ function saveRound(){
       return false;
     }
 
-    const crew=[...document.querySelectorAll(".crewBox:checked")].map(x=>+x.value);
+    const crew=[...new Set(Object.values(readAxisAssignments()).flatMap(site=>Object.values(site).flat()))];
     const officers=[...document.querySelectorAll(".officerBox:checked")].map(x=>+x.value);
     const officerNames=selectedOfficerNames();
 
@@ -962,7 +1001,6 @@ function editRound(id){
   let r=state.rounds.find(x=>x.id===id);if(!r)return;
   editRoundId=id;document.getElementById("rDate").value=r.date;document.getElementById("rType").value=r.type;document.getElementById("rTime").value=r.time||"";document.getElementById("rOfficerExtra").value=r.officerExtra||"";document.getElementById("rNotes").value=r.notes||"";document.getElementById("roundTitle").textContent="تعديل برنامج الجولة";
   const hasRealSites=Array.isArray(r.sites)&&r.sites.some(Boolean);document.getElementById("sitePick").innerHTML=`<div class="site-mode" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><label class="site-mode-option" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:9px;background:#f8fafc;cursor:pointer"><input type="radio" name="siteMode" id="siteModeSelected" value="selected" ${hasRealSites?"checked":""}> <b>تحديد موقع</b></label><label class="site-mode-option" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:9px;background:#f8fafc;cursor:pointer"><input type="radio" name="siteMode" id="siteModeBlank" value="blank" ${hasRealSites?"":"checked"}> <b>بدون موقع</b></label></div><div id="siteChoices">`+SITES.map(s=>`<label><input type="checkbox" class="siteBox" value="${esc(s)}" ${(r.sites||[]).includes(s)?"checked":""}> ${esc(s)}</label>`).join("")+`</div><div class="muted" id="siteModeHint" style="margin-top:6px">اختر موقعاً أو أكثر لهذه الجولة، أو اختر «بدون موقع» لترك خانة الموقع فارغة.</div>`;
-  document.getElementById("crewPick").innerHTML=state.crew.map((c,i)=>`<label><input type="checkbox" class="crewBox" value="${i}" ${(r.crew||[]).includes(i)?"checked":""}> ${esc(c.name)} — ${esc(c.spec)}${c.role?" — "+esc(c.role):""}</label>`).join("")||"<div class='muted'>لا يوجد طاقم مضاف.</div>";
   let selectedOfficers=Array.isArray(r.officers)?r.officers:[];if(!selectedOfficers.length&&r.officer){let parts=r.officer.split(/،|,/).map(x=>x.trim());selectedOfficers=state.crew.map((c,i)=>parts.includes(c.name)?i:-1).filter(i=>i>=0)}renderOfficerPick(selectedOfficers);renderAxisAssignments(r.assignments||{});bindSiteAssignmentRefresh(r.assignments||{});openModal("roundModal")
 }
 function arabicDateFull(v){
@@ -1176,8 +1214,8 @@ function printCurrentRound(){
   generateDirectPdf(document.getElementById("printSheet").innerHTML,{title:`برنامج ${type} للجولة`,type,date,time,sites,assignments});
 }
 
-function openCrew(i=-1){editCrew=i;document.getElementById("cName").value=i<0?"":state.crew[i].name;document.getElementById("cRank").value=i<0?"":state.crew[i].rank;document.getElementById("cPhone").value=i<0?"":state.crew[i].phone||"";document.getElementById("cNotes").value=i<0?"":state.crew[i].notes||"";document.getElementById("cRole").value=i<0?"عضو":state.crew[i].role;document.getElementById("cSpec").innerHTML=SPECS.map(s=>`<option>${esc(s)}</option>`).join("");if(i>=0)document.getElementById("cSpec").value=state.crew[i].spec;openModal("crewModal")}
-function saveCrew(){if(!currentUser||!currentUser.p.crew)return alert("لا تملك صلاحية إدارة طاقم الجولة");let c={name:document.getElementById("cName").value,rank:document.getElementById("cRank").value,spec:document.getElementById("cSpec").value,role:document.getElementById("cRole").value,phone:document.getElementById("cPhone").value,notes:document.getElementById("cNotes").value};if(!c.name)return alert("أدخل الاسم");if(editCrew<0)state.crew.push(c);else state.crew[editCrew]=c;save();closeModal("crewModal");renderAll()}
+function openCrew(i=-1){editCrew=i;document.getElementById("cName").value=i<0?"":state.crew[i].name;document.getElementById("cRank").value=i<0?"":state.crew[i].rank;document.getElementById("cPhone").value=i<0?"":state.crew[i].phone||"";document.getElementById("cNotes").value=i<0?"":state.crew[i].notes||"";document.getElementById("cRole").value=i<0?(pendingAxisRole||"عضو"):state.crew[i].role;document.getElementById("cSpec").innerHTML=SPECS.map(s=>`<option>${esc(s)}</option>`).join("");if(i>=0)document.getElementById("cSpec").value=state.crew[i].spec;else if(pendingAxisSpec)document.getElementById("cSpec").value=pendingAxisSpec;openModal("crewModal")}
+function saveCrew(){if(!currentUser||!currentUser.p.crew)return alert("لا تملك صلاحية إدارة طاقم الجولة");let c={name:document.getElementById("cName").value.trim(),rank:document.getElementById("cRank").value.trim(),spec:document.getElementById("cSpec").value,role:document.getElementById("cRole").value,phone:document.getElementById("cPhone").value.trim(),notes:document.getElementById("cNotes").value.trim()};if(!c.name)return alert("أدخل الاسم");if(editCrew<0)state.crew.push(c);else state.crew[editCrew]=c;save();closeModal("crewModal");renderAll();if(document.getElementById("roundModal")?.classList.contains("show")){renderAxisAssignments(readAxisAssignments());}pendingAxisSpec="";pendingAxisRole=""}
 function openUser(i=-1){if(!currentUser||!currentUser.p.users)return alert("لا تملك صلاحية إدارة المستخدمين");editUser=i;let u=i<0?{u:"",full:"",pass:"",job:"",role:"مستخدم",p:{add:true,multi:false,crew:false,users:false,reports:true,map:true}}:state.users[i];["uName","uFull","uPass","uJob"].forEach((id,j)=>document.getElementById(id).value=[u.u,u.full,u.pass,u.job][j]||"");document.getElementById("uRole").value=u.role;for(let [id,k] of [["pAdd","add"],["pMulti","multi"],["pCrew","crew"],["pUsers","users"],["pReports","reports"],["pMap","map"]])document.getElementById(id).checked=!!u.p[k];openModal("userModal")}
 function saveUser(){if(!currentUser||!currentUser.p.users)return alert("لا تملك صلاحية إدارة المستخدمين");let u={u:document.getElementById("uName").value.trim(),full:document.getElementById("uFull").value,pass:document.getElementById("uPass").value,job:document.getElementById("uJob").value,role:document.getElementById("uRole").value,p:{}};for(let [id,k] of [["pAdd","add"],["pMulti","multi"],["pCrew","crew"],["pUsers","users"],["pReports","reports"],["pMap","map"]])u.p[k]=document.getElementById(id).checked;if(!u.u||!u.pass)return alert("اسم المستخدم وكلمة المرور مطلوبان");if(editUser<0)state.users.push(u);else state.users[editUser]=u;save();if(currentUser&&currentUser.u===u.u)currentUser=u;closeModal("userModal");renderUsers();applyPermissions()}
 function showSite(s){let rs=state.rounds.filter(r=>(r.sites||[]).includes(s));document.getElementById("siteTitle").textContent="جولات الموقع: "+s;document.getElementById("siteRows").innerHTML=rs.map(r=>`<tr><td>${r.date}</td><td>${r.type}</td><td>${statusOf(r.date)}</td><td>${esc(r.officer||"—")}</td></tr>`).join("")||"<tr><td colspan='4'>لا توجد جولات</td></tr>";openModal("siteModal")}
@@ -1185,6 +1223,35 @@ function showCity(c){let rs=state.rounds.filter(r=>(r.sites||[]).some(s=>cityOf(
 function normalizeHeader(v){return String(v??"").trim().replace(/\s+/g," ")}
 function excelCell(row,names){for(const n of names){const k=Object.keys(row).find(x=>normalizeHeader(x)===n);if(k!==undefined)return row[k]}return ""}
 function splitExcelList(v){return String(v??"").split(/[|،,;\n]+/).map(x=>x.trim()).filter(Boolean)}
+function importCrewExcel(){
+  if(!currentUser||!currentUser.p.crew)return alert("لا تملك صلاحية إدارة طاقم الجولة");
+  const i=document.createElement("input");i.type="file";i.accept=".xlsx,.xls,.csv";
+  i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{
+    if(!window.XLSX)return alert("مكتبة Excel لم تُحمّل بعد، حاول مرة أخرى");
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]||"Sheet1"];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:""});if(!rows.length)return alert("ملف Excel فارغ");
+    let added=0,updated=0,skipped=0;
+    rows.forEach(row=>{
+      const name=String(excelCell(row,["الاسم","اسم الشخص","Name"])||"").trim();
+      const rank=String(excelCell(row,["الرتبة","Rank"])||"").trim();
+      const spec=String(excelCell(row,["المحور","التخصص","الاختصاص","Axis","Specialty"])||"").trim();
+      const role=String(excelCell(row,["الدور","صفة الطاقم","Role"])||"عضو").trim()||"عضو";
+      const phone=String(excelCell(row,["الهاتف","رقم الهاتف","Phone"])||"").trim();
+      const notes=String(excelCell(row,["ملاحظات","Notes"])||"").trim();
+      if(!name||!spec||!SPECS.includes(spec)){skipped++;return;}
+      const idx=state.crew.findIndex(c=>c.name===name&&c.rank===rank&&c.spec===spec);
+      const obj={name,rank,spec,role,phone,notes};
+      if(idx>=0){state.crew[idx]=obj;updated++;}else{state.crew.push(obj);added++;}
+    });
+    save();renderAll();alert(`تم استيراد طاقم الجولة.\nأضيف: ${added}\nتم تحديثه: ${updated}\nتم تجاوز: ${skipped}`);
+  }catch(err){console.error(err);alert("تعذر قراءة ملف Excel. تأكد من الأعمدة: الاسم، الرتبة، المحور، الدور، الهاتف، ملاحظات.")}};r.readAsArrayBuffer(f)};i.click();
+}
+function downloadCrewTemplate(){
+  if(!window.XLSX)return alert("مكتبة Excel لم تُحمّل بعد، حاول مرة أخرى");
+  const rows=SPECS.map((spec,i)=>({"الرقم":i+1,"الرتبة":"","الاسم":"","المحور":spec,"الدور":spec==="قائد الفريق"?"قائد فريق":(spec==="رئيس الفريق"?"رئيس فريق":"عضو"),"الهاتف":"","ملاحظات":""}));
+  const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=[{wch:8},{wch:18},{wch:32},{wch:34},{wch:16},{wch:16},{wch:35}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"طاقم الجولة");XLSX.writeFile(wb,"نموذج_طاقم_الجولة.xlsx");
+}
 function openExcelImport(){if(!currentUser||!currentUser.p.add)return alert("لا تملك صلاحية إضافة الجولات");const i=document.createElement("input");i.type="file";i.accept=".xlsx,.xls,.csv";i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{if(!window.XLSX)return alert("مكتبة Excel لم تُحمّل بعد، حاول مرة أخرى");const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{defval:""});if(!rows.length)return alert("ملف Excel فارغ");let added=0,skipped=0;rows.forEach((row,idx)=>{const date=excelCell(row,["التاريخ","تاريخ الجولة","اليوم والتاريخ","Date"]);const type=excelCell(row,["نوع الجولة","النوع","Type"])||"معلن";const time=excelCell(row,["وقت الحركة","الوقت","Time"]);const sites=splitExcelList(excelCell(row,["الموقع","المواقع","الجهة","Site","Sites"]));const officer=excelCell(row,["الضباط المعنيون","الضابط المعني","المسؤول","Officer"]);const notes=excelCell(row,["ملاحظات","Notes"]);if(!date||!sites.length){skipped++;return}state.rounds.push({id:Date.now().toString()+"-"+idx,date:String(date).slice(0,10),type,time:String(time||""),officer:String(officer||""),officers:[],officerExtra:String(officer||""),notes:String(notes||""),sites,crew:[],assignments:{}});added++});save();renderAll();drawMaps();alert(`تم استيراد ${added} جولة${skipped?`، وتم تجاوز ${skipped} صفوف غير مكتملة`:""}.\\n\\nالآن افتح أي جولة واضغط "تعديل" لاختيار الطاقم وربط كل عضو بالمحور المناسب، ثم اطبع برنامج الجولة.`)}catch(err){console.error(err);alert("تعذر قراءة ملف Excel. تأكد أن الصف الأول يحتوي أسماء الأعمدة.")}};r.readAsArrayBuffer(f)};i.click()}
 function exportRoundsExcel(){if(!state.rounds.length)return alert("لا توجد جولات لتصديرها");if(!window.XLSX)return alert("مكتبة Excel لم تُحمّل بعد، حاول مرة أخرى");const rows=state.rounds.map((r,i)=>({"رقم الجولة":i+1,"التاريخ":r.date,"نوع الجولة":r.type,"وقت الحركة":r.time||"","المواقع":(r.sites||[]).join(" | "),"الضباط المعنيون":r.officer||"","الطاقم":(r.crew||[]).map(id=>state.crew[id]?.name||"").filter(Boolean).join(" | "),"المحاور والمعنيون":Object.entries(r.assignments||{}).map(([sp,ids])=>`${sp}: ${(ids||[]).map(id=>state.crew[id]?.name||"").filter(Boolean).join("، ")}`).join(" | "),"ملاحظات":r.notes||""}));const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=[{wch:12},{wch:14},{wch:18},{wch:12},{wch:45},{wch:35},{wch:40},{wch:90},{wch:45}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"الجولات");XLSX.writeFile(wb,"برنامج_الجولات.xlsx")}
 function downloadExcelTemplate(){if(!window.XLSX)return alert("مكتبة Excel لم تُحمّل بعد، حاول مرة أخرى");const rows=[{"رقم الجولة":1,"التاريخ":today(),"نوع الجولة":"معلن","وقت الحركة":"08:00","المواقع":"مركز أمن إربد الشمالي | قسم سير جنوب عمان","الضباط المعنيون":"","الطاقم":"","المحاور والمعنيون":"","ملاحظات":""}];const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=[{wch:12},{wch:14},{wch:18},{wch:12},{wch:45},{wch:35},{wch:40},{wch:90},{wch:45}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"الجولات");XLSX.writeFile(wb,"نموذج_استيراد_الجولات.xlsx")}
