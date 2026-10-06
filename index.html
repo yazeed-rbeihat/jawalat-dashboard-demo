@@ -567,6 +567,11 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .axis-add{padding:7px 10px;border:1px solid #1976d2;background:#eef6ff;color:#1264a3;border-radius:8px;font-weight:800}
 .crew-tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 @media(max-width:700px){.axis-people{grid-template-columns:1fr}.axis-pick-title{font-size:14px}}
+
+/* V33: selected people are shown immediately under each axis */
+.axis-selected-summary{margin-top:7px;padding:7px 10px;border-radius:8px;background:#f8fafc;color:#64748b;font-size:12px;line-height:1.5;min-height:18px}
+.axis-selected-summary.has-selection{background:#eef7ff;color:#145a9c;border:1px solid #b9d7f2}
+.axis-selected-summary b{font-weight:900}
 </style>
 </head>
 <body>
@@ -780,6 +785,24 @@ let state=(storedState&&Array.isArray(storedState.rounds)&&storedState.rounds.le
 };
 state.users=(Array.isArray(state.users)?state.users:[]).map(u=>({u:String(u?.u||""),full:String(u?.full||u?.u||"مستخدم"),pass:String(u?.pass||""),job:String(u?.job||""),role:String(u?.role||"مستخدم"),p:{add:true,multi:false,crew:false,users:false,reports:true,map:true,...(u?.p||{})}})).filter(u=>u.u&&u.pass);
 if(!state.users.some(u=>u.u==="admin")){state.users.unshift(DEFAULT_USERS[0]);}
+/* V34 stable IDs: keep each crew member linked to the PDF selection */
+function ensureCrewIds(){
+  state.crew=(state.crew||[]).map((c,i)=>{
+    if(!c.id)c.id=`CREW-${String(i+1).padStart(4,"0")}-${Math.random().toString(36).slice(2,8)}`;
+    return c;
+  });
+}
+function normalizeCrewRef(ref){
+  if(ref===null||ref===undefined||ref==="")return null;
+  const byId=state.crew.find(c=>String(c.id)===String(ref));
+  if(byId)return byId.id;
+  if(typeof ref==="number"||/^\d+$/.test(String(ref))){
+    const c=state.crew[Number(ref)];
+    return c?.id||null;
+  }
+  return null;
+}
+ensureCrewIds();
 if(!storedState||!Array.isArray(storedState.rounds)||!storedState.rounds.length){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 let editCrew=-1, editUser=-1, map1,map2, currentUser=null, pendingAxisSpec="", pendingAxisRole="";
 function login(){
@@ -889,25 +912,42 @@ function renderAxisAssignments(assignments={}){
         const candidates=axisCandidates(spec);
         const single=(spec==="قائد الفريق"||spec==="رئيس الفريق");
         return `<div class="axis-pick-card"><div class="axis-pick-head"><div><span class="axis-pick-title">${i+1}. ${esc(spec)}</span><span class="axis-pick-count"> — ${candidates.length} شخص مسجل</span></div><button type="button" class="axis-add" onclick="openCrewForAxis('${esc(spec)}')">+ إضافة شخص</button></div><div class="axis-people">${candidates.length?candidates.map(({c,idx})=>{
-          const checked=selected.includes(idx)?"checked":"";
-          const input=single?`<input type="radio" name="axis_${si}_${i}" class="axisPick" data-site="${esc(site)}" data-spec="${esc(spec)}" value="${idx}" ${checked}>`:`<input type="checkbox" class="axisPick" data-site="${esc(site)}" data-spec="${esc(spec)}" value="${idx}" ${checked}>`;
-          return `<label class="axis-person-option">${input}<span><span class="axis-person-name">${esc(c.rank||"")} ${esc(c.name||"")}</span><span class="axis-person-meta">${esc(c.role||"عضو")}${c.phone?" — "+esc(c.phone):""}</span></span></label>`;
-        }).join(""):"<div class='axis-empty'>لا يوجد أشخاص مسجلون لهذا المحور. اضغط «إضافة شخص» لإدخال أول شخص.</div>"}</div></div>`;
+          const crewId=c.id;
+          const checked=selected.map(normalizeCrewRef).includes(crewId)?"checked":"";
+          const input=single?`<input type="radio" name="axis_${si}_${i}" class="axisPick" data-site="${esc(site)}" data-spec="${esc(spec)}" value="${esc(crewId)}" ${checked}>`:`<input type="checkbox" class="axisPick" data-site="${esc(site)}" data-spec="${esc(spec)}" value="${esc(crewId)}" ${checked}>`;
+          return `<label class="axis-person-option">${input}<span><span class="axis-person-name">${esc(c.rank||"")} ${esc(c.name||"")}</span><span class="axis-person-meta">${esc(c.role||"عضو")}</span></span></label>`;
+        }).join(""):"<div class='axis-empty'>لا يوجد أشخاص مسجلون لهذا المحور. اضغط «إضافة شخص» لإدخال أول شخص.</div>"}</div><div class="axis-selected-summary" data-summary-site="${esc(site)}" data-summary-spec="${esc(spec)}"></div></div>`;
       }).join("")}</div></div>`;
   }).join("");
+  bindAxisSelectionEvents();
 }
-/* V32-ACTIVE: explicit visible checkbox/radio beside every person */
+/* V34-ACTIVE: stable crew IDs + selected names print correctly */
+/* V33-ACTIVE: show selected names immediately and keep selections visible */
+function refreshAxisSelectedSummaries(){
+  document.querySelectorAll(".axis-selected-summary").forEach(el=>{
+    const site=el.dataset.summarySite||"", spec=el.dataset.summarySpec||"";
+    const ids=[...document.querySelectorAll(`.axisPick:checked[data-site="${CSS.escape(site)}"][data-spec="${CSS.escape(spec)}"]`)].map(x=>normalizeCrewRef(x.value)).filter(Boolean);
+    const names=ids.map(id=>state.crew.find(c=>String(c.id)===String(id))).filter(Boolean).map(c=>`${c.rank||""} ${c.name||""}`.trim());
+    el.innerHTML=names.length?`<b>المختار:</b> ${names.map(esc).join("، ")}`:`<span>لم يتم اختيار أي شخص بعد</span>`;
+    el.classList.toggle("has-selection",names.length>0);
+  });
+}
 function readAxisAssignments(){
   let out={};
   document.querySelectorAll(".axisPick:checked").forEach(inp=>{
     const site=inp.dataset.site,spec=inp.dataset.spec;
-    const val=+inp.value;
+    const val=normalizeCrewRef(inp.value);
+    if(!val) return;
     if(!out[site])out[site]={};
     if(!out[site][spec])out[site][spec]=[];
     if(!out[site][spec].includes(val))out[site][spec].push(val);
   });
   Object.keys(out).forEach(site=>{if(!Object.keys(out[site]).length)delete out[site]});
   return out;
+}
+function bindAxisSelectionEvents(){
+  document.querySelectorAll(".axisPick").forEach(inp=>inp.addEventListener("change",refreshAxisSelectedSummaries));
+  refreshAxisSelectedSummaries();
 }
 function bindSiteAssignmentRefresh(existing={}){
   const blankRadio=document.getElementById("siteModeBlank");
@@ -1027,11 +1067,11 @@ function formatPerson(c){
   return `<div class="person-card ${cls}" dir="rtl"><span class="person-name">${esc(c.rank||"")} ${esc(c.name)}</span>${phone}</div>`;
 }
 function peopleIdsFor(site,spec,assignments){
-  return (Array.isArray(assignments?.[site]?.[spec])?assignments[site][spec]:[]).map(id=>+id).filter(id=>state.crew[id]);
+  return (Array.isArray(assignments?.[site]?.[spec])?assignments[site][spec]:[]).map(normalizeCrewRef).filter(Boolean);
 }
 function peopleSignature(ids){ return ids.join(','); }
 function peopleHtmlFor(site,spec,assignments){
-  return peopleIdsFor(site,spec,assignments).map(id=>formatPerson(state.crew[id])).join("")||"—";
+  return peopleIdsFor(site,spec,assignments).map(id=>formatPerson(state.crew.find(c=>String(c.id)===String(id)))).join("")||"—";
 }
 function buildMergedSiteCells(sites,spec,assignments){
   let html="", i=0;
@@ -1040,7 +1080,7 @@ function buildMergedSiteCells(sites,spec,assignments){
     const sig=peopleSignature(ids);
     let span=1;
     while(i+span<sites.length && peopleSignature(peopleIdsFor(sites[i+span],spec,assignments))===sig) span++;
-    const content=ids.length?ids.map(id=>formatPerson(state.crew[id])).join(""):"—";
+    const content=ids.length?ids.map(id=>formatPerson(state.crew.find(c=>String(c.id)===String(id)))).join(""):"—";
     html+=`<td class="site-cell"${span>1?` colspan="${span}"`:""}>${content}</td>`;
     i+=span;
   }
@@ -1087,7 +1127,7 @@ async function generateDirectPdf(reportHtml, meta={}){
     function center(t,x,y,w,h,sz,b=true){font(sz,b);ctx.textAlign='center';ctx.fillText(String(t||''),x+w/2,y+h/2);}
     function right(t,x,y,w,sz,b=true){font(sz,b);ctx.textAlign='right';ctx.fillText(String(t||''),x+w-14,y);}
     function fit(t,max,sz=42,min=18,b=true){let f=sz;while(f>min){font(f,b);if(ctx.measureText(t).width<=max)break;f--;};return f;}
-    function person(id){const p=state.crew[id];if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}`.trim();}
+    function person(id){const p=state.crew.find(c=>String(c.id)===String(id)) || state.crew[Number(id)];if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}`.trim();}
     function ids(site,spec){return (Array.isArray(meta.assignments?.[site]?.[spec])?meta.assignments[site][spec]:[]).map(Number).filter(id=>state.crew[id]);}
     function uniq(a){return [...new Set(a)];}
     function groupIds(g,spec){return uniq(g.flatMap(site=>ids(site,spec)));}
@@ -1223,7 +1263,7 @@ function printCurrentRound(){
 }
 
 function openCrew(i=-1){editCrew=i;document.getElementById("cName").value=i<0?"":state.crew[i].name;document.getElementById("cRank").value=i<0?"":state.crew[i].rank;document.getElementById("cPhone").value=i<0?"":state.crew[i].phone||"";document.getElementById("cNotes").value=i<0?"":state.crew[i].notes||"";document.getElementById("cRole").value=i<0?(pendingAxisRole||"عضو"):state.crew[i].role;document.getElementById("cSpec").innerHTML=SPECS.map(s=>`<option>${esc(s)}</option>`).join("");if(i>=0)document.getElementById("cSpec").value=state.crew[i].spec;else if(pendingAxisSpec)document.getElementById("cSpec").value=pendingAxisSpec;openModal("crewModal")}
-function saveCrew(){if(!currentUser||!currentUser.p.crew)return alert("لا تملك صلاحية إدارة طاقم الجولة");let c={name:document.getElementById("cName").value.trim(),rank:document.getElementById("cRank").value.trim(),spec:document.getElementById("cSpec").value,role:document.getElementById("cRole").value,phone:document.getElementById("cPhone").value.trim(),notes:document.getElementById("cNotes").value.trim()};if(!c.name)return alert("أدخل الاسم");if(editCrew<0)state.crew.push(c);else state.crew[editCrew]=c;save();closeModal("crewModal");renderAll();if(document.getElementById("roundModal")?.classList.contains("show")){renderAxisAssignments(readAxisAssignments());}pendingAxisSpec="";pendingAxisRole=""}
+function saveCrew(){if(!currentUser||!currentUser.p.crew)return alert("لا تملك صلاحية إدارة طاقم الجولة");let c={id:editCrew>=0?(state.crew[editCrew].id||`CREW-${String(editCrew+1).padStart(4,"0")}-${Date.now().toString(36)}`):`CREW-${String(state.crew.length+1).padStart(4,"0")}-${Date.now().toString(36)}`,name:document.getElementById("cName").value.trim(),rank:document.getElementById("cRank").value.trim(),spec:document.getElementById("cSpec").value,role:document.getElementById("cRole").value,phone:document.getElementById("cPhone").value.trim(),notes:document.getElementById("cNotes").value.trim()};if(!c.name)return alert("أدخل الاسم");if(editCrew<0)state.crew.push(c);else state.crew[editCrew]=c;save();closeModal("crewModal");renderAll();if(document.getElementById("roundModal")?.classList.contains("show")){renderAxisAssignments(readAxisAssignments());}pendingAxisSpec="";pendingAxisRole=""}
 function openUser(i=-1){if(!currentUser||!currentUser.p.users)return alert("لا تملك صلاحية إدارة المستخدمين");editUser=i;let u=i<0?{u:"",full:"",pass:"",job:"",role:"مستخدم",p:{add:true,multi:false,crew:false,users:false,reports:true,map:true}}:state.users[i];["uName","uFull","uPass","uJob"].forEach((id,j)=>document.getElementById(id).value=[u.u,u.full,u.pass,u.job][j]||"");document.getElementById("uRole").value=u.role;for(let [id,k] of [["pAdd","add"],["pMulti","multi"],["pCrew","crew"],["pUsers","users"],["pReports","reports"],["pMap","map"]])document.getElementById(id).checked=!!u.p[k];openModal("userModal")}
 function saveUser(){if(!currentUser||!currentUser.p.users)return alert("لا تملك صلاحية إدارة المستخدمين");let u={u:document.getElementById("uName").value.trim(),full:document.getElementById("uFull").value,pass:document.getElementById("uPass").value,job:document.getElementById("uJob").value,role:document.getElementById("uRole").value,p:{}};for(let [id,k] of [["pAdd","add"],["pMulti","multi"],["pCrew","crew"],["pUsers","users"],["pReports","reports"],["pMap","map"]])u.p[k]=document.getElementById(id).checked;if(!u.u||!u.pass)return alert("اسم المستخدم وكلمة المرور مطلوبان");if(editUser<0)state.users.push(u);else state.users[editUser]=u;save();if(currentUser&&currentUser.u===u.u)currentUser=u;closeModal("userModal");renderUsers();applyPermissions()}
 function showSite(s){let rs=state.rounds.filter(r=>(r.sites||[]).includes(s));document.getElementById("siteTitle").textContent="جولات الموقع: "+s;document.getElementById("siteRows").innerHTML=rs.map(r=>`<tr><td>${r.date}</td><td>${r.type}</td><td>${statusOf(r.date)}</td><td>${esc(r.officer||"—")}</td></tr>`).join("")||"<tr><td colspan='4'>لا توجد جولات</td></tr>";openModal("siteModal")}
@@ -1265,7 +1305,7 @@ function exportRoundsExcel(){if(!state.rounds.length)return alert("لا توجد
 function downloadExcelTemplate(){if(!window.XLSX)return alert("مكتبة Excel لم تُحمّل بعد، حاول مرة أخرى");const rows=[{"رقم الجولة":1,"التاريخ":today(),"نوع الجولة":"معلن","وقت الحركة":"08:00","المواقع":"مركز أمن إربد الشمالي | قسم سير جنوب عمان","الضباط المعنيون":"","الطاقم":"","المحاور والمعنيون":"","ملاحظات":""}];const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=[{wch:12},{wch:14},{wch:18},{wch:12},{wch:45},{wch:35},{wch:40},{wch:90},{wch:45}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"الجولات");XLSX.writeFile(wb,"نموذج_استيراد_الجولات.xlsx")}
 function printReport(){document.getElementById("printSheet").innerHTML=`<h1>تقرير إحصائيات الجولات المنفذة</h1><div class="box">تاريخ التقرير: ${today()}</div><div class="box"><table><tr><th>المؤشر</th><th>القيمة</th></tr><tr><td>إجمالي الجولات المنفذة</td><td>${document.getElementById("rDone").textContent}</td></tr><tr><td>معلن</td><td>${document.getElementById("rAnn").textContent}</td></tr><tr><td>مفاجئ / متابعة</td><td>${document.getElementById("rSur").textContent}</td></tr><tr><td>متخصص</td><td>${document.getElementById("rSpec").textContent}</td></tr><tr><td>المواقع</td><td>${document.getElementById("rSites").textContent}</td></tr></table></div>`;window.print()}
 function exportBackup(){let a=document.createElement("a");a.href="data:application/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(state,null,2));a.download="jawalat-backup.json";a.click()}
-function importBackup(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=()=>{let r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();renderAll();drawMaps();alert("تم الاستيراد")}catch(e){alert("ملف غير صالح")}};r.readAsText(i.files[0])};i.click()}
+function importBackup(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=()=>{let r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);ensureCrewIds();save();renderAll();drawMaps();alert("تم الاستيراد")}catch(e){alert("ملف غير صالح")}};r.readAsText(i.files[0])};i.click()}
 function seedDemo(){if(!confirm("سيتم استبدال بيانات العرض الحالية. متابعة؟"))return;state.rounds=[{id:"1",date:today(),type:"معلن",time:"08:00",officer:"ضابط الجولة",sites:["مركز أمن إربد الشمالي","قسم سير جنوب عمان"],crew:[]},{id:"2",date:"2026-09-10",type:"مفاجئ / متابعة",time:"09:00",officer:"ضابط الجولة",sites:["قسم مكافحة مخدرات شمال عمان"],crew:[]},{id:"3",date:"2026-09-22",type:"متخصص",time:"07:30",officer:"ضابط الجولة",sites:["مفرزة أمن وقائي صويلح","قسم سير الزرقاء"],crew:[]}];save();renderAll();drawMaps()}
 function openModal(id){document.getElementById(id).classList.add("show")}function closeModal(id){document.getElementById(id).classList.remove("show")}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
