@@ -921,7 +921,7 @@ function renderAxisAssignments(assignments={}){
   }).join("");
   bindAxisSelectionEvents();
 }
-/* V34-ACTIVE: stable crew IDs + selected names print correctly */
+/* V35-ACTIVE: stable crew IDs are resolved correctly inside direct PDF renderer */
 /* V33-ACTIVE: show selected names immediately and keep selections visible */
 function refreshAxisSelectedSummaries(){
   document.querySelectorAll(".axis-selected-summary").forEach(el=>{
@@ -1127,8 +1127,8 @@ async function generateDirectPdf(reportHtml, meta={}){
     function center(t,x,y,w,h,sz,b=true){font(sz,b);ctx.textAlign='center';ctx.fillText(String(t||''),x+w/2,y+h/2);}
     function right(t,x,y,w,sz,b=true){font(sz,b);ctx.textAlign='right';ctx.fillText(String(t||''),x+w-14,y);}
     function fit(t,max,sz=42,min=18,b=true){let f=sz;while(f>min){font(f,b);if(ctx.measureText(t).width<=max)break;f--;};return f;}
-    function person(id){const p=state.crew.find(c=>String(c.id)===String(id)) || state.crew[Number(id)];if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}`.trim();}
-    function ids(site,spec){return (Array.isArray(meta.assignments?.[site]?.[spec])?meta.assignments[site][spec]:[]).map(Number).filter(id=>state.crew[id]);}
+    function person(id){const ref=normalizeCrewRef(id);const p=state.crew.find(c=>String(c.id)===String(ref));if(!p)return '';return `${clean(p.rank)} ${clean(p.name)}`.trim();}
+    function ids(site,spec){return (Array.isArray(meta.assignments?.[site]?.[spec])?meta.assignments[site][spec]:[]).map(normalizeCrewRef).filter(Boolean);}
     function uniq(a){return [...new Set(a)];}
     function groupIds(g,spec){return uniq(g.flatMap(site=>ids(site,spec)));}
     function same(a,b){return a.join(',')===b.join(',');}
